@@ -1,15 +1,18 @@
 package com.nite07;
 
-import com.nite07.Pojo.ConfigData;
 import com.nite07.Pojo.ConfigItem;
 import com.nite07.Pojo.Entry;
+import com.nite07.Pojo.WebDetails;
 import kotlin.Pair;
 import net.mamoe.mirai.Bot;
+import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Friend;
 import net.mamoe.mirai.contact.Group;
+import net.mamoe.mirai.message.data.Image;
 import net.mamoe.mirai.message.data.PlainText;
 import net.mamoe.mirai.utils.MiraiLogger;
 
+import java.net.URL;
 import java.util.List;
 
 public class Scheduler implements Runnable {
@@ -35,20 +38,42 @@ public class Scheduler implements Runnable {
      * @param msg    发送内容
      * @return 是否成功发送
      */
-    public void sendMessage(String target, String type, PlainText msg) {
+    public void sendMessage(String target, String type, PlainText msg, String imageUrl) {
         if (bot != null) {
             if (type.equals("Group")) {
                 if (RssBot.strToLong(target) != -1) {
                     Group group = bot.getGroup(RssBot.strToLong(target));
                     if (group != null) {
-                        group.sendMessage(msg);
+                        Image image = null;
+                        try {
+                            if (imageUrl != null) {
+                                image = Contact.uploadImage(group, new URL(imageUrl).openConnection().getInputStream());
+                            }
+                        } catch (Exception ignore) {
+                        }
+                        if (image != null) {
+                            group.sendMessage(msg.plus(image));
+                        } else {
+                            group.sendMessage(msg);
+                        }
                     }
                 }
             } else if (type.equals("Friend")) {
                 if (RssBot.strToLong(target) != -1) {
                     Friend friend = bot.getFriend(RssBot.strToLong(target));
                     if (friend != null) {
-                        friend.sendMessage(msg);
+                        Image image = null;
+                        try {
+                            if (imageUrl != null) {
+                                image = Contact.uploadImage(friend, new URL(imageUrl).openConnection().getInputStream());
+                            }
+                        } catch (Exception ignore) {
+                        }
+                        if (image != null) {
+                            friend.sendMessage(msg.plus(image));
+                        } else {
+                            friend.sendMessage(msg);
+                        }
                     }
                 }
             }
@@ -70,7 +95,8 @@ public class Scheduler implements Runnable {
                 }
                 if (!exist) {
                     //logger.info(c.title + "更新了新的内容\n" + ne.title + "\n" + ne.link);
-                    sendMessage(c.target, c.type, new PlainText(c.title + "更新了新的内容\n" + ne.title + "\n" + ne.link));
+                    WebDetails webDetails = Rss.getWebDetails(c.url);
+                    sendMessage(c.target, c.type, new PlainText(c.title + "更新了新的内容\n" + ne.title + "\n" + webDetails.description + "\n" + ne.link), webDetails.imageUrl);
                 }
             }
             c.entries = p.getSecond();

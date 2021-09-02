@@ -1,6 +1,6 @@
 # Mirai Rss订阅插件
 
-基于[Mirai框架](https://github.com/mamoe/mirai)，自动推送更新内容到QQ群
+基于[Mirai框架](https://github.com/mamoe/mirai)，自动推送更新内容到QQ
 
 # 截图
 
@@ -10,14 +10,15 @@
 
 - DOM4j
 - Fastjson
+- Jsoup
 
 # 安装方法
 
-将打包完成的 jar 文件放入 `<Mirai Console Loader>\plugins\`目录  
-先启动一次 mcl，等待RssBot插件加载完成后关闭    
-找到 `<Mirai Console Loader>\config\RssBot\data.json`  
-将 `botId` 改为自己的机器人QQ  
-重新启动 mcl
+1. 将打包完成的 jar 文件放入 `<Mirai Console Loader>\plugins\目录`
+2. 先启动一次 mcl，等待RssBot插件加载完成后关闭
+3. 找到 `<Mirai Console Loader>\config\RssBot\data.json`
+4. 将 `botId` 改为自己的机器人QQ
+5. 重新启动 mcl
 
 # 使用方法
 
