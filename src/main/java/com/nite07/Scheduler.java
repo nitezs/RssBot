@@ -8,8 +8,8 @@ import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Friend;
 import net.mamoe.mirai.contact.Group;
-import net.mamoe.mirai.message.data.Image;
-import net.mamoe.mirai.message.data.PlainText;
+import net.mamoe.mirai.message.data.*;
+import net.mamoe.mirai.utils.ExternalResource;
 import net.mamoe.mirai.utils.MiraiLogger;
 
 import java.net.URL;
@@ -32,48 +32,42 @@ public class Scheduler implements Runnable {
 
     /**
      * 主动发送信息
-     *
-     * @param target 发送目标Id(group或friend)
-     * @param type   发送类型(group或friend)
-     * @param msg    发送内容
-     * @return 是否成功发送
      */
-    public void sendMessage(String target, String type, PlainText msg, String imageUrl) {
+    public void sendMessage(String target, String type, String imageUrl, String title, String description, String link) {
         if (bot != null) {
+            PlainText p1 = new PlainText(c.title);
+            PlainText p2 = new PlainText(" 更新了新的内容：\n\t");
+            MessageChain msg = p1.plus(p2);
             if (type.equals("Group")) {
                 if (RssBot.strToLong(target) != -1) {
                     Group group = bot.getGroup(RssBot.strToLong(target));
                     if (group != null) {
-                        Image image = null;
+                        Image img = null;
                         try {
-                            if (imageUrl != null) {
-                                image = Contact.uploadImage(group, new URL(imageUrl).openConnection().getInputStream());
-                            }
+                            img = Contact.uploadImage(group, new URL(imageUrl).openConnection().getInputStream());
                         } catch (Exception ignore) {
                         }
-                        if (image != null) {
-                            group.sendMessage(msg.plus(image));
-                        } else {
-                            group.sendMessage(msg);
+                        msg = msg.plus(new PlainText(title + "\n\t" + description + "\n\t" + link));
+                        if (img != null) {
+                            msg = msg.plus(img);
                         }
+                        group.sendMessage(msg);
                     }
                 }
             } else if (type.equals("Friend")) {
                 if (RssBot.strToLong(target) != -1) {
                     Friend friend = bot.getFriend(RssBot.strToLong(target));
                     if (friend != null) {
-                        Image image = null;
+                        Image img = null;
                         try {
-                            if (imageUrl != null) {
-                                image = Contact.uploadImage(friend, new URL(imageUrl).openConnection().getInputStream());
-                            }
+                            img = Contact.uploadImage(friend, new URL(imageUrl).openConnection().getInputStream());
                         } catch (Exception ignore) {
                         }
-                        if (image != null) {
-                            friend.sendMessage(msg.plus(image));
-                        } else {
-                            friend.sendMessage(msg);
+                        msg = msg.plus(new PlainText(title + "\n\t" + description + "\n\t" + link));
+                        if (img != null) {
+                            msg = msg.plus(img);
                         }
+                        friend.sendMessage(msg);
                     }
                 }
             }
@@ -95,8 +89,8 @@ public class Scheduler implements Runnable {
                 }
                 if (!exist) {
                     //logger.info(c.title + "更新了新的内容\n" + ne.title + "\n" + ne.link);
-                    WebDetails webDetails = Rss.getWebDetails(c.url);
-                    sendMessage(c.target, c.type, new PlainText(c.title + "更新了新的内容\n" + ne.title + "\n" + webDetails.description + "\n" + ne.link), webDetails.imageUrl);
+                    WebDetails webDetails = Rss.getWebDetails(ne.link);
+                    sendMessage(c.target, c.type, webDetails.imageUrl, ne.title, webDetails.description, ne.link);
                 }
             }
             c.entries = p.getSecond();
