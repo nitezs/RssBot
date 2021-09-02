@@ -40,7 +40,7 @@ public class Rss {
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
         for (Element e : elements) {
             String t = (String) e.elements("title").get(0).getData();
-            String l = (String) e.elements("link").get(0).getData();
+            String l = (String) e.elements("link").get(0).attribute("href").getData();
             Date d = null;
             try {
                 d = simpleDateFormat.parse(String.valueOf(e.elements("updated").get(0).getData()));

@@ -1,5 +1,6 @@
 package com.nite07;
 
+import com.nite07.Pojo.ConfigData;
 import com.nite07.Pojo.ConfigItem;
 import com.nite07.Pojo.Entry;
 import kotlin.Pair;
@@ -7,18 +8,23 @@ import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Friend;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.message.data.PlainText;
+import net.mamoe.mirai.utils.MiraiLogger;
 
 import java.util.List;
-import java.util.zip.Adler32;
 
 public class Scheduler implements Runnable {
 
     ConfigItem c;
     Bot bot;
+    MiraiLogger logger;
+    Config cfg;
 
-    public Scheduler(ConfigItem c, Bot bot) {
+    public Scheduler(ConfigItem c, Bot bot, MiraiLogger logger, Config cfg) {
         this.c = c;
         this.bot = bot;
+        this.logger = logger;
+        this.cfg = cfg;
+        //logger.info("任务初始化完成/" + c.id + "/" + c.url);
     }
 
     /**
@@ -51,21 +57,24 @@ public class Scheduler implements Runnable {
 
     @Override
     public void run() {
+        //logger.info("开始抓取" + c.id);
         Pair<String, List<Entry>> p = Rss.parseXML(c.url);
-        if (p != null && p.getSecond() != null) {
+        if (p != null) {
             for (Entry ne : p.getSecond()) {
                 boolean exist = false;
                 for (Entry oe : c.entries) {
-                    if (ne.title.equals(oe.title) && ne.link.equals(oe.link)) {
+                    if (ne.title.equals(oe.title) || ne.link.equals(oe.link)) {
                         exist = true;
                         break;
                     }
                 }
                 if (!exist) {
+                    //logger.info(c.title + "更新了新的内容\n" + ne.title + "\n" + ne.link);
                     sendMessage(c.target, c.type, new PlainText(c.title + "更新了新的内容\n" + ne.title + "\n" + ne.link));
                 }
             }
             c.entries = p.getSecond();
+            cfg.saveConfig();
         }
     }
 }

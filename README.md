@@ -14,9 +14,10 @@
 # 安装方法
 
 将打包完成的 jar 文件放入 `<Mirai Console Loader>\plugins\`目录  
-启动一次 mcl  
+先启动一次 mcl，等待RssBot插件加载完成后关闭    
 找到 `<Mirai Console Loader>\config\RssBot\data.json`  
-将 `botId` 改为已登录的机器人QQ
+将 `botId` 改为自己的机器人QQ  
+重新启动 mcl
 
 # 使用方法
 

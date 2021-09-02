@@ -11,6 +11,7 @@ import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.MemberPermission;
 import net.mamoe.mirai.event.GlobalEventChannel;
 import net.mamoe.mirai.event.Listener;
+import net.mamoe.mirai.event.events.BotOnlineEvent;
 import net.mamoe.mirai.event.events.GroupMessageEvent;
 import net.mamoe.mirai.event.events.MessageEvent;
 import net.mamoe.mirai.message.data.At;
@@ -34,6 +35,7 @@ public final class RssBot extends JavaPlugin {
     public Config cfg = new Config();
     Map<Long, ScheduledFuture<?>> tasks = new HashMap<>();
     ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);
+    Bot myBot = null;
 
     private RssBot() {
         super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.0")
@@ -49,9 +51,16 @@ public final class RssBot extends JavaPlugin {
     @Override
     public void onEnable() {
         getLogger().info("RssBot 插件已加载");
-        loadTasks();
-        Listener<MessageEvent> listener = GlobalEventChannel.INSTANCE.subscribeAlways(MessageEvent.class, g -> {
+        Listener<MessageEvent> msgListener = GlobalEventChannel.INSTANCE.subscribeAlways(MessageEvent.class, g -> {
             runCMD(g.getMessage().contentToString(), g);
+        });
+        Listener<BotOnlineEvent> botOnlineListener = GlobalEventChannel.INSTANCE.subscribeOnce(BotOnlineEvent.class, g -> {
+            myBot = getBotInstance();
+            if (myBot != null) {
+                loadTasks();
+            } else {
+                getLogger().info("RssBot使用账号未登录");
+            }
         });
     }
 
@@ -160,7 +169,9 @@ public final class RssBot extends JavaPlugin {
     }
 
     public Bot getBotInstance() {
+        getLogger().info(String.valueOf(Bot.getInstances().size()));
         for (Bot bot : Bot.getInstances()) {
+            getLogger().info("bot" + bot.getId());
             if (String.valueOf(bot.getId()).equals(cfg.getBotId())) {
                 return bot;
             }
@@ -176,7 +187,7 @@ public final class RssBot extends JavaPlugin {
         if (cis != null) {
             for (ConfigItem c : cis) {
                 if (c.enable) {
-                    tasks.put(c.id, executor.scheduleWithFixedDelay(new Scheduler(c, getBotInstance()), 0, c.interval, TimeUnit.MINUTES));
+                    tasks.put(c.id, executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, c.interval, TimeUnit.MINUTES));
                 }
             }
         }
@@ -200,7 +211,7 @@ public final class RssBot extends JavaPlugin {
                             Pair<String, List<Entry>> p = Rss.parseXML(slice[1]);
                             ConfigItem c = new ConfigItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], 10, p.getFirst(), p.getSecond());
                             cfg.addConfigItem(c);
-                            tasks.put(id, executor.scheduleWithFixedDelay(new Scheduler(c, getBotInstance()), 0, 10, TimeUnit.MINUTES));
+                            tasks.put(id, executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, 10, TimeUnit.MINUTES));
                             sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\nUrl：" + c.url + "\n抓取频率：10分钟");
                         } else if (paramNum == 2) {
                             if (isDigit(slice[2])) {
@@ -208,7 +219,7 @@ public final class RssBot extends JavaPlugin {
                                 Pair<String, List<Entry>> p = Rss.parseXML(slice[1]);
                                 ConfigItem c = new ConfigItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], Integer.parseInt(slice[2]), p.getFirst(), p.getSecond());
                                 cfg.addConfigItem(c);
-                                tasks.put(id, executor.scheduleWithFixedDelay(new Scheduler(c, getBotInstance()), 0, Integer.parseInt(slice[2]), TimeUnit.MINUTES));
+                                tasks.put(id, executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, Integer.parseInt(slice[2]), TimeUnit.MINUTES));
                                 sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\nUrl：" + c.url + "\n抓取频率：" + slice[2] + "分钟");
                             }
                         }
@@ -246,7 +257,7 @@ public final class RssBot extends JavaPlugin {
                         ConfigItem c = cfg.getConfigItem(Long.parseLong(slice[1]));
                         if (c != null) {
                             tasks.get(strToLong(slice[1])).cancel(true);
-                            tasks.put(strToLong(slice[1]), executor.scheduleWithFixedDelay(new Scheduler(c, getBotInstance()), 0, strToLong(slice[2]), TimeUnit.MINUTES));
+                            tasks.put(strToLong(slice[1]), executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, strToLong(slice[2]), TimeUnit.MINUTES));
                             c.interval = Integer.parseInt(slice[2]);
                             cfg.saveConfig();
                             sendMessage(g, "抓取频率已修改\n" + "ID：" + c.id + "\n标题：" + c.title + "\nUrl：" + c.url + "\n抓取频率：" + c.interval + "分钟");
