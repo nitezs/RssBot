@@ -169,9 +169,7 @@ public final class RssBot extends JavaPlugin {
     }
 
     public Bot getBotInstance() {
-        getLogger().info(String.valueOf(Bot.getInstances().size()));
         for (Bot bot : Bot.getInstances()) {
-            getLogger().info("bot" + bot.getId());
             if (String.valueOf(bot.getId()).equals(cfg.getBotId())) {
                 return bot;
             }
