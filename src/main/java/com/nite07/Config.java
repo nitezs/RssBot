@@ -1,9 +1,7 @@
 package com.nite07;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.alibaba.fastjson.JSON;
@@ -49,7 +47,10 @@ public class Config {
         lock.lock();
         data = new ConfigData();
         data.botId = "123456789";
+        data.autoAcceptFriendApplication = true;
+        data.autoAcceptGroupApplication = true;
         data.data = new ArrayList<>();
+        data.maxSub = 100;
         lock.unlock();
         saveConfig();
     }
@@ -105,7 +106,7 @@ public class Config {
     }
 
     public void removeConfigItem(ConfigItem c) {
-        c.enable = false;
+        data.data.remove(c);
         saveConfig();
     }
 
@@ -116,7 +117,7 @@ public class Config {
             return new ArrayList<ConfigItem>();
         }
         for (ConfigItem c : data.data) {
-            if (c.target.equals(target) && c.enable) {
+            if (c.target.equals(target)) {
                 res.add(c);
             }
         }
@@ -129,12 +130,41 @@ public class Config {
     }
 
     public long getNewId() {
-        if (data.data == null) {
-            return 1;
-        } else {
-            return data.data.size() + 1;
+        lock.lock();
+        long id;
+        boolean exist = false;
+        do {
+            exist = false;
+            Random r = new Random(new Date().getTime());
+            id = r.nextInt(99999);
+            for (ConfigItem c : data.data) {
+                if (id == c.id) {
+                    exist = true;
+                    break;
+                }
+            }
         }
+        while (exist);
+        lock.unlock();
+        return id;
     }
 
+    public boolean getAutoAcceptFriendApplication() {
+        return data.autoAcceptFriendApplication;
+    }
 
+    public boolean getAutoAcceptGroupApplication() {
+        return data.autoAcceptGroupApplication;
+    }
+
+    public boolean canAddSub() {
+        return data.data.size() < data.maxSub;
+    }
+
+    public void clearConfigItem(String target, String type) {
+        lock.lock();
+        data.data.removeIf(c -> c.target.equals(target) && c.type.equals(type));
+        saveConfig();
+        lock.unlock();
+    }
 }

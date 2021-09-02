@@ -11,9 +11,7 @@ import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.MemberPermission;
 import net.mamoe.mirai.event.GlobalEventChannel;
 import net.mamoe.mirai.event.Listener;
-import net.mamoe.mirai.event.events.BotOnlineEvent;
-import net.mamoe.mirai.event.events.GroupMessageEvent;
-import net.mamoe.mirai.event.events.MessageEvent;
+import net.mamoe.mirai.event.events.*;
 import net.mamoe.mirai.message.data.At;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.PlainText;
@@ -38,11 +36,25 @@ public final class RssBot extends JavaPlugin {
     Bot myBot = null;
 
     private RssBot() {
-        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.1")
+        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.2")
                 .name("RssBot")
                 .info("A Rss Bot")
                 .author("Nite07")
                 .build());
+    }
+
+    /**
+     * 将 String 转换为 long,如果不能转换返回 -1
+     *
+     * @param s String
+     * @return long
+     */
+    static public long strToLong(String s) {
+        try {
+            return Long.parseLong(s);
+        } catch (Exception e) {
+            return -1;
+        }
     }
 
     /**
@@ -51,16 +63,32 @@ public final class RssBot extends JavaPlugin {
     @Override
     public void onEnable() {
         getLogger().info("RssBot 插件已加载");
-        Listener<MessageEvent> msgListener = GlobalEventChannel.INSTANCE.subscribeAlways(MessageEvent.class, g -> {
+        Listener<MessageEvent> messageEventListener = GlobalEventChannel.INSTANCE.subscribeAlways(MessageEvent.class, g -> {
             runCMD(g.getMessage().contentToString(), g);
         });
-        Listener<BotOnlineEvent> botOnlineListener = GlobalEventChannel.INSTANCE.subscribeOnce(BotOnlineEvent.class, g -> {
+        Listener<BotOnlineEvent> botOnlineEventListener = GlobalEventChannel.INSTANCE.subscribeOnce(BotOnlineEvent.class, g -> {
             myBot = getBotInstance();
             if (myBot != null) {
                 loadTasks();
             } else {
                 getLogger().info("RssBot使用账号未登录");
             }
+        });
+        Listener<NewFriendRequestEvent> newFriendRequestEventListener = GlobalEventChannel.INSTANCE.subscribeAlways(NewFriendRequestEvent.class, g -> {
+            if (cfg.getAutoAcceptFriendApplication()) {
+                g.accept();
+            }
+        });
+        Listener<BotInvitedJoinGroupRequestEvent> botInvitedJoinGroupRequestEventListener = GlobalEventChannel.INSTANCE.subscribeAlways(BotInvitedJoinGroupRequestEvent.class, g -> {
+            if (cfg.getAutoAcceptGroupApplication()) {
+                g.accept();
+            }
+        });
+        Listener<BotLeaveEvent> botLeaveEventListener = GlobalEventChannel.INSTANCE.subscribeAlways(BotLeaveEvent.class, g -> {
+            cfg.clearConfigItem(String.valueOf(g.getGroup().getId()), "Group");
+        });
+        Listener<FriendDeleteEvent> friendDeleteEventListener = GlobalEventChannel.INSTANCE.subscribeAlways(FriendDeleteEvent.class, g -> {
+            cfg.clearConfigItem(String.valueOf(g.getFriend().getId()), "Friend");
         });
     }
 
@@ -136,20 +164,6 @@ public final class RssBot extends JavaPlugin {
     }
 
     /**
-     * 将 String 转换为 long,如果不能转换返回 -1
-     *
-     * @param s String
-     * @return long
-     */
-    static public long strToLong(String s) {
-        try {
-            return Long.parseLong(s);
-        } catch (Exception e) {
-            return -1;
-        }
-    }
-
-    /**
      * 被动发送信息
      *
      * @param g   MessageEvent
@@ -184,9 +198,7 @@ public final class RssBot extends JavaPlugin {
         List<ConfigItem> cis = cfg.getConfigItems();
         if (cis != null) {
             for (ConfigItem c : cis) {
-                if (c.enable) {
-                    tasks.put(c.id, executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, c.interval, TimeUnit.MINUTES));
-                }
+                tasks.put(c.id, executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, c.interval, TimeUnit.MINUTES));
             }
         }
     }
@@ -205,21 +217,33 @@ public final class RssBot extends JavaPlugin {
                 if (checkSenderPerm(g)) {
                     if (checkUrl(slice[1])) {
                         if (paramNum == 1) {
-                            long id = cfg.getNewId();
-                            Pair<String, List<Entry>> p = Rss.parseXML(slice[1]);
-                            ConfigItem c = new ConfigItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], 10, p.getFirst(), p.getSecond());
-                            cfg.addConfigItem(c);
-                            tasks.put(id, executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, 10, TimeUnit.MINUTES));
-                            sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\nUrl：" + c.url + "\n抓取频率：10分钟");
-                        } else if (paramNum == 2) {
-                            if (isDigit(slice[2])) {
+                            if (cfg.canAddSub()) {
                                 long id = cfg.getNewId();
                                 Pair<String, List<Entry>> p = Rss.parseXML(slice[1]);
-                                ConfigItem c = new ConfigItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], Integer.parseInt(slice[2]), p.getFirst(), p.getSecond());
+                                ConfigItem c = new ConfigItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], 10, p.getFirst(), p.getSecond());
                                 cfg.addConfigItem(c);
-                                tasks.put(id, executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, Integer.parseInt(slice[2]), TimeUnit.MINUTES));
-                                sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\nUrl：" + c.url + "\n抓取频率：" + slice[2] + "分钟");
+                                tasks.put(id, executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, 10, TimeUnit.MINUTES));
+                                sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\nUrl：" + c.url + "\n抓取频率：10分钟");
+                            } else {
+                                sendMessage(g, "总订阅量已达上限，你可以自己搭建一个RssBot\nhttps://github.com/NiTian1207/RssBot");
                             }
+                        } else if (paramNum == 2) {
+                            if (isDigit(slice[2])) {
+                                if (cfg.canAddSub()) {
+                                    long id = cfg.getNewId();
+                                    Pair<String, List<Entry>> p = Rss.parseXML(slice[1]);
+                                    ConfigItem c = new ConfigItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], Integer.parseInt(slice[2]), p.getFirst(), p.getSecond());
+                                    cfg.addConfigItem(c);
+                                    tasks.put(id, executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, Integer.parseInt(slice[2]), TimeUnit.MINUTES));
+                                    sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\nUrl：" + c.url + "\n抓取频率：" + slice[2] + "分钟");
+                                } else {
+                                    sendMessage(g, "总订阅量已达上限，你可以自己搭建一个RssBot\nhttps://github.com/NiTian1207/RssBot");
+                                }
+                            } else {
+                                sendMessage(g, "参数错误");
+                            }
+                        } else {
+                            sendMessage(g, "参数错误");
                         }
                     } else {
                         sendMessage(g, "链接无法访问");
@@ -276,7 +300,7 @@ public final class RssBot extends JavaPlugin {
                             StringBuilder stringBuilder = new StringBuilder();
                             stringBuilder.append("当前有").append(cs.size()).append("条订阅:\n");
                             for (ConfigItem c : cs) {
-                                stringBuilder.append(c.id).append(":").append(c.url);
+                                stringBuilder.append("\nID：").append(c.id).append("\n标题：").append(c.title).append("\nUrl").append(c.url).append("\n");
                             }
                             sendMessage(g, stringBuilder.toString());
                         } else {

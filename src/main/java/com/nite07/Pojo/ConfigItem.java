@@ -3,7 +3,6 @@ package com.nite07.Pojo;
 import java.util.List;
 
 public class ConfigItem {
-    public boolean enable;
     public long id;
     public String type;
     public String target;
@@ -18,7 +17,6 @@ public class ConfigItem {
         this.target = target;
         this.interval = interval;
         this.url = url;
-        this.enable = true;
         this.title = title;
         this.entries = entries;
     }
