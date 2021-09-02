@@ -42,7 +42,7 @@
 `#list`  
 订阅列表
 
-`#detail <id>`
+`#detail <id>`  
 订阅详情  
 参数：
 - id - 必填 - 订阅对应ID
