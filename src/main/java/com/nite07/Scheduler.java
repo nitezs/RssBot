@@ -34,8 +34,9 @@ public class Scheduler implements Runnable {
      */
     public void sendMessage(String target, String type, String imageUrl, String title, String description, String link) {
         if (bot != null) {
-            PlainText p1 = new PlainText(c.title);
+            PlainText p1 = new PlainText("\uD83D\uDCAC" + c.title);
             PlainText p2 = new PlainText(" 更新了新的内容：\n\t");
+            PlainText p3 = new PlainText("标题：" + title + "\n\t简介：" + description + "\n点击查看更多：" + link);
             MessageChain msg = p1.plus(p2);
             if (type.equals("Group")) {
                 if (RssBot.strToLong(target) != -1) {
@@ -46,7 +47,7 @@ public class Scheduler implements Runnable {
                             img = Contact.uploadImage(group, new URL(imageUrl).openConnection().getInputStream());
                         } catch (Exception ignore) {
                         }
-                        msg = msg.plus(new PlainText(title + "\n\t" + description + "\n\t" + link));
+                        msg = msg.plus(p3);
                         if (img != null) {
                             msg = msg.plus(img);
                         }
@@ -62,7 +63,7 @@ public class Scheduler implements Runnable {
                             img = Contact.uploadImage(friend, new URL(imageUrl).openConnection().getInputStream());
                         } catch (Exception ignore) {
                         }
-                        msg = msg.plus(new PlainText(title + "\n\t" + description + "\n\t" + link));
+                        msg = msg.plus(p3);
                         if (img != null) {
                             msg = msg.plus(img);
                         }

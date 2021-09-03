@@ -20,6 +20,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,13 +31,13 @@ import java.util.concurrent.TimeUnit;
 
 public final class RssBot extends JavaPlugin {
     public static final RssBot INSTANCE = new RssBot();
-    public Config cfg = new Config();
+    public Config cfg = null;
     Map<Long, ScheduledFuture<?>> tasks = new HashMap<>();
     ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);
     Bot myBot = null;
 
     private RssBot() {
-        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.2")
+        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.3")
                 .name("RssBot")
                 .info("A Rss Bot")
                 .author("Nite07")
@@ -63,6 +64,7 @@ public final class RssBot extends JavaPlugin {
     @Override
     public void onEnable() {
         getLogger().info("RssBot 插件已加载");
+        cfg = new Config(getLogger());
         Listener<MessageEvent> messageEventListener = GlobalEventChannel.INSTANCE.subscribeAlways(MessageEvent.class, g -> {
             runCMD(g.getMessage().contentToString(), g);
         });
@@ -128,7 +130,7 @@ public final class RssBot extends JavaPlugin {
      */
     public boolean checkUrl(String url) {
         HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
+        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).timeout(Duration.ofSeconds(5)).build();
         try {
             return client.send(request, HttpResponse.BodyHandlers.ofString()).statusCode() == 200;
         } catch (Exception ignore) {

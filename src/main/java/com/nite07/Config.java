@@ -7,24 +7,25 @@ import java.util.concurrent.locks.ReentrantLock;
 import com.alibaba.fastjson.JSON;
 import com.nite07.Pojo.ConfigData;
 import com.nite07.Pojo.ConfigItem;
+import net.mamoe.mirai.utils.MiraiLogger;
 
 public class Config {
-    String configPath = "config/RssBot/data.json";
+    String configDir = "config/RssBot/";
+    String configName = "data.json";
+    String configPath = configDir + configName;
     private ConfigData data;
     ReentrantLock lock = new ReentrantLock();
+    MiraiLogger logger;
 
-    public Config() {
+    public Config(MiraiLogger logger) {
+        this.logger = logger;
         File file = new File(configPath);
         String cfg = null;
         if (!configExist()) {
-            try {
-                file.createNewFile();
-                initConfigData();
-            } catch (IOException ignored) {
-            }
+            initConfigData();
         } else {
             try (FileReader fileReader = new FileReader(file);
-                 BufferedReader bufferedReader = new BufferedReader(fileReader);) {
+                 BufferedReader bufferedReader = new BufferedReader(fileReader)) {
                 StringBuilder stringBuilder = new StringBuilder();
                 String line;
                 while ((line = bufferedReader.readLine()) != null) {
@@ -65,16 +66,13 @@ public class Config {
         String json = JSON.toJSONString(data);
         File file = new File(configPath);
         if (!file.exists()) {
-            String dirs[] = configPath.split("/");
-            StringBuilder dir = new StringBuilder();
-            for (int i = 0; i < dirs.length - 1; i++) {
-                dir.append(dirs[i]).append("/");
+            File f = new File(configDir);
+            if (!f.mkdirs()) {
+                logger.warning("创建文件夹失败");
             }
-            File f = new File(dir.toString());
-            f.mkdirs();
         }
         try (FileWriter fileWriter = new FileWriter(file);
-             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter);) {
+             BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
             bufferedWriter.write(json);
             bufferedWriter.flush();
         } catch (IOException ignored) {
@@ -114,7 +112,7 @@ public class Config {
         List<ConfigItem> res = new ArrayList<>();
         lock.lock();
         if (data.data == null) {
-            return new ArrayList<ConfigItem>();
+            return new ArrayList<>();
         }
         for (ConfigItem c : data.data) {
             if (c.target.equals(target)) {
@@ -132,7 +130,7 @@ public class Config {
     public long getNewId() {
         lock.lock();
         long id;
-        boolean exist = false;
+        boolean exist;
         do {
             exist = false;
             Random r = new Random(new Date().getTime());
