@@ -315,11 +315,11 @@ public final class RssBot extends JavaPlugin {
                     sendMessage(g, "没有操作权限");
                 }
             } else if (cmd.equals("#help")) {
-                String t = "#sub <url> [interval(minute)]\n" +
-                        "#unsub <id>\n" +
-                        "#setinterval <id> <interval(minute)>\n" +
-                        "#list\n" +
-                        "#detail <id>\n" +
+                String t = "#sub <url> [interval(minute)]\t添加订阅\n" +
+                        "#unsub <id>\t取消订阅\n" +
+                        "#setinterval <id> <interval(minute)>\t设置抓取间隔（单位：分钟）\n" +
+                        "#list\t列出当前订阅\n" +
+                        "#detail <id>\t查询订阅详细信息\n" +
                         "<>为必须参数，[]为可选参数";
                 sendMessage(g, t);
             } else if (cmd.startsWith("#detail")) {
