@@ -1,5 +1,7 @@
 package com.nite07.Pojo;
 
+import java.util.List;
+
 public class ConfigData {
     public String botId;
     public boolean autoAcceptFriendApplication;
@@ -10,4 +12,6 @@ public class ConfigData {
     public int proxy_port;
     public String proxy_username;
     public String proxy_password;
+    public boolean enableWhiteList;
+    public List<String> whiteList;
 }

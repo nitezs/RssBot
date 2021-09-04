@@ -109,21 +109,25 @@ public final class RssBot extends JavaPlugin {
     }
 
     /**
-     * 检查发送者是否有管理权限
+     * 检查发送者是否有发送权限
      *
      * @param g MessageEvent
      * @return boolean
      */
     public boolean checkSenderPerm(MessageEvent g) {
-        if (g.getSubject() instanceof Group) {
-            MemberPermission sender;
-            try {
-                sender = ((GroupMessageEvent) g).getPermission();
-            } catch (Exception ignore) {
-                sender = ((Group) g.getSubject()).getBotPermission();
-            }
-            return sender == MemberPermission.OWNER || sender == MemberPermission.ADMINISTRATOR;
-        } else return g.getSubject() instanceof Friend;
+        if (cfg.whiteList()) {
+            return cfg.inWhiteList(String.valueOf(g.getSender().getId()));
+        } else {
+            if (g.getSubject() instanceof Group) {
+                MemberPermission sender;
+                try {
+                    sender = ((GroupMessageEvent) g).getPermission();
+                } catch (Exception ignore) {
+                    sender = ((Group) g.getSubject()).getBotPermission();
+                }
+                return sender == MemberPermission.OWNER || sender == MemberPermission.ADMINISTRATOR;
+            } else return g.getSubject() instanceof Friend;
+        }
     }
 
     /**

@@ -115,6 +115,8 @@ public class Config {
         cfg.proxy_type = "";
         cfg.proxy_password = "";
         cfg.proxy_username = "";
+        cfg.enableWhiteList = false;
+        cfg.whiteList = new ArrayList<>();
         String json = JSON.toJSONString(cfg, SerializerFeature.PrettyFormat);
         File file = new File(configPath);
         if (!file.exists()) {
@@ -309,5 +311,18 @@ public class Config {
         } catch (Exception ignore) {
             return null;
         }
+    }
+
+    public boolean whiteList() {
+        return cfg.enableWhiteList;
+    }
+
+    public boolean inWhiteList(String id) {
+        for (String s : cfg.whiteList) {
+            if (s.equals(id)) {
+                return true;
+            }
+        }
+        return false;
     }
 }
