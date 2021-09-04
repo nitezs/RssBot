@@ -318,9 +318,11 @@ public class Config {
     }
 
     public boolean inWhiteList(String id) {
-        for (String s : cfg.whiteList) {
-            if (s.equals(id)) {
-                return true;
+        if (cfg.whiteList != null) {
+            for (String s : cfg.whiteList) {
+                if (s.equals(id)) {
+                    return true;
+                }
             }
         }
         return false;

@@ -90,7 +90,7 @@ public class Rss {
     public static WebDetails getWebDetails(String url) {
         WebDetails webDetails = new WebDetails();
         try {
-            Connection conn = Jsoup.connect(url);
+            Connection conn = Jsoup.connect(url).followRedirects(true);
             org.jsoup.nodes.Document doc = conn.userAgent("User-Agent,Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36 Edg/92.0.902.84").get();
             Elements es = doc.select("meta[property]");
             for (org.jsoup.nodes.Element e : es) {

@@ -35,7 +35,12 @@ public class Scheduler implements Runnable {
         if (bot != null) {
             PlainText p1 = new PlainText("\uD83D\uDCAC " + c.title);
             PlainText p2 = new PlainText(" 更新了新的内容：\n");
-            PlainText p3 = new PlainText("\t标题：" + title + "\n\t简介：" + description + "……\n点击查看更多：" + link);
+            PlainText p3;
+            if (description != null) {
+                p3 = new PlainText("\t标题：" + title + "\n\t简介：" + description + "……\n点击查看更多：" + link);
+            } else {
+                p3 = new PlainText("\t标题：" + title + "……\n点击查看更多：" + link);
+            }
             MessageChain msg = p1.plus(p2);
             if (type.equals("Group")) {
                 if (RssBot.strToLong(target) != -1) {
