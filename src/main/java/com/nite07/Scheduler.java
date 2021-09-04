@@ -39,7 +39,7 @@ public class Scheduler implements Runnable {
             if (description != null) {
                 p3 = new PlainText("\t标题：" + title + "\n\t简介：" + description + "……\n点击查看更多：" + link);
             } else {
-                p3 = new PlainText("\t标题：" + title + "……\n点击查看更多：" + link);
+                p3 = new PlainText("\t标题：" + title + "\n点击查看更多：" + link);
             }
             MessageChain msg = p1.plus(p2);
             if (type.equals("Group")) {
@@ -91,11 +91,11 @@ public class Scheduler implements Runnable {
                     }
                 }
                 if (!exist) {
+                    c.entries.add(ne);
                     WebDetails webDetails = Rss.getWebDetails(ne.link);
                     sendMessage(c.target, c.type, webDetails.imageUrl, ne.title, webDetails.description, ne.link);
                 }
             }
-            c.entries = p.getSecond();
             cfg.saveData();
         }
     }
