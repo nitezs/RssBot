@@ -119,8 +119,10 @@ public class Config {
         File file = new File(configPath);
         if (!file.exists()) {
             File f = new File(configDir);
-            if (!f.mkdirs()) {
-                logger.warning("创建配置文件夹失败");
+            if (!f.exists()) {
+                if (!f.mkdirs()) {
+                    logger.warning("创建配置文件夹失败");
+                }
             }
         }
         try (FileWriter fileWriter = new FileWriter(file);
@@ -154,8 +156,10 @@ public class Config {
         File file = new File(dataPath);
         if (!file.exists()) {
             File f = new File(datafileDir);
-            if (!f.mkdirs()) {
-                logger.warning("创建数据文件夹失败");
+            if (!f.exists()) {
+                if (!f.mkdirs()) {
+                    logger.warning("创建数据文件夹失败");
+                }
             }
         }
         try (FileWriter fileWriter = new FileWriter(file);

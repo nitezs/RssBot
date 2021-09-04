@@ -116,7 +116,12 @@ public final class RssBot extends JavaPlugin {
      */
     public boolean checkSenderPerm(MessageEvent g) {
         if (g.getSubject() instanceof Group) {
-            MemberPermission sender = ((GroupMessageEvent) g).getPermission();
+            MemberPermission sender;
+            try {
+                sender = ((GroupMessageEvent) g).getPermission();
+            } catch (Exception ignore) {
+                sender = ((Group) g.getSubject()).getBotPermission();
+            }
             return sender == MemberPermission.OWNER || sender == MemberPermission.ADMINISTRATOR;
         } else return g.getSubject() instanceof Friend;
     }
