@@ -34,7 +34,7 @@ public final class RssBot extends JavaPlugin {
     Bot myBot = null;
 
     private RssBot() {
-        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.5")
+        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.6")
                 .name("RssBot")
                 .info("A Rss Bot")
                 .author("Nite07")
@@ -109,7 +109,7 @@ public final class RssBot extends JavaPlugin {
     }
 
     /**
-     * 检查发送者是否有发送权限
+     * 检查发送者是否有操作权限
      *
      * @param g MessageEvent
      * @return boolean
@@ -117,7 +117,7 @@ public final class RssBot extends JavaPlugin {
     public boolean checkSenderPerm(MessageEvent g) {
         if (cfg.whiteList()) {
             return cfg.inWhiteList(String.valueOf(g.getSender().getId()));
-        } else {
+        } else if (cfg.groupPermissionRestrictions()) {
             if (g.getSubject() instanceof Group) {
                 MemberPermission sender;
                 try {
@@ -127,6 +127,8 @@ public final class RssBot extends JavaPlugin {
                 }
                 return sender == MemberPermission.OWNER || sender == MemberPermission.ADMINISTRATOR;
             } else return g.getSubject() instanceof Friend;
+        } else {
+            return true;
         }
     }
 
@@ -200,6 +202,11 @@ public final class RssBot extends JavaPlugin {
         }
     }
 
+    /**
+     * 获取Bot实例
+     *
+     * @return Bot
+     */
     public Bot getBotInstance() {
         for (Bot bot : Bot.getInstances()) {
             if (String.valueOf(bot.getId()).equals(cfg.getBotId())) {
@@ -236,9 +243,9 @@ public final class RssBot extends JavaPlugin {
                 if (checkSenderPerm(g)) {
                     if (checkUrl(slice[1])) {
                         if (paramNum == 1) {
-                            if (cfg.canAddSub()) {
+                            if (cfg.reachLimit()) {
                                 long id = cfg.getNewId();
-                                String xml = cfg.get(slice[1]);
+                                String xml = Rss.get(slice[1], cfg);
                                 Pair<String, List<Entry>> p = Rss.parseXML(xml);
                                 if (p == null) {
                                     getLogger().warning("添加订阅发生异常，订阅链接为：" + slice[1]);
@@ -254,9 +261,9 @@ public final class RssBot extends JavaPlugin {
                             }
                         } else if (paramNum == 2) {
                             if (isDigit(slice[2])) {
-                                if (cfg.canAddSub()) {
+                                if (cfg.reachLimit()) {
                                     long id = cfg.getNewId();
-                                    String xml = cfg.get(slice[1]);
+                                    String xml = Rss.get(slice[1], cfg);
                                     Pair<String, List<Entry>> p = Rss.parseXML(xml);
                                     if (p == null) {
                                         getLogger().warning("添加订阅发生异常，订阅链接为：" + slice[1]);
@@ -285,7 +292,7 @@ public final class RssBot extends JavaPlugin {
             } else if (cmd.startsWith("#unsub")) {
                 if (checkSenderPerm(g)) {
                     if (paramNum == 1 && strToLong(slice[1]) != -1) {
-                        RssItem c = cfg.getConfigItem(Long.parseLong(slice[1]));
+                        RssItem c = cfg.getRssItem(Long.parseLong(slice[1]));
                         if (c != null) {
                             if (isSubOwner(g, c)) {
                                 tasks.get(strToLong(slice[1])).cancel(true);
@@ -307,7 +314,7 @@ public final class RssBot extends JavaPlugin {
             } else if (cmd.startsWith("#setinterval")) {
                 if (checkSenderPerm(g)) {
                     if (paramNum == 2 && strToLong(slice[1]) != -1 && strToLong(slice[2]) != -1) {
-                        RssItem c = cfg.getConfigItem(Long.parseLong(slice[1]));
+                        RssItem c = cfg.getRssItem(Long.parseLong(slice[1]));
                         if (c != null) {
                             tasks.get(strToLong(slice[1])).cancel(true);
                             tasks.put(strToLong(slice[1]), executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, strToLong(slice[2]), TimeUnit.MINUTES));
@@ -355,7 +362,7 @@ public final class RssBot extends JavaPlugin {
                 if (checkSenderPerm(g)) {
                     if (paramNum == 1) {
                         if (strToLong(slice[1]) != -1) {
-                            RssItem c = cfg.getConfigItem(strToLong(slice[1]));
+                            RssItem c = cfg.getRssItem(strToLong(slice[1]));
                             sendMessage(g, "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + c.interval + "分钟\n");
                         } else {
                             sendMessage(g, "参数错误");

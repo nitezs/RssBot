@@ -4,7 +4,6 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 
 import com.alibaba.fastjson.JSON;
@@ -13,9 +12,6 @@ import com.nite07.Pojo.ConfigData;
 import com.nite07.Pojo.RssItem;
 import net.mamoe.mirai.utils.MiraiLogger;
 import okhttp3.Credentials;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 public class Config {
     String configDir = "config/RssBot/";
@@ -71,6 +67,9 @@ public class Config {
         logConfig();
     }
 
+    /**
+     * 在 Mirai 终端打印配置信息
+     */
     public void logConfig() {
         StringBuilder log = new StringBuilder("\nRssBotID：\t\t")
                 .append(cfg.botId)
@@ -100,10 +99,18 @@ public class Config {
         logger.info(log.toString());
     }
 
+    /**
+     * 获取订阅列表
+     *
+     * @return List<RssItem>
+     */
     public List<RssItem> getRssItems() {
         return rssItems;
     }
 
+    /**
+     * 初始化Config文件
+     */
     public void initConfig() {
         cfg = new ConfigData();
         cfg.botId = "123456789";
@@ -116,6 +123,7 @@ public class Config {
         cfg.proxy_password = "";
         cfg.proxy_username = "";
         cfg.enableWhiteList = false;
+        cfg.groupPermissionRestrictions = true;
         cfg.whiteList = new ArrayList<>();
         String json = JSON.toJSONString(cfg, SerializerFeature.PrettyFormat);
         File file = new File(configPath);
@@ -135,6 +143,9 @@ public class Config {
         }
     }
 
+    /**
+     * 初始化订阅数据
+     */
     public void initData() {
         lock.lock();
         rssItems = new ArrayList<>();
@@ -142,16 +153,29 @@ public class Config {
         saveData();
     }
 
+    /**
+     * 判断配置文件是否存在
+     *
+     * @return boolean
+     */
     public boolean configExist() {
         File file = new File(configPath);
         return file.exists();
     }
 
+    /**
+     * 配置订阅文件是否存在
+     *
+     * @return boolean
+     */
     public boolean dataExist() {
         File file = new File(dataPath);
         return file.exists();
     }
 
+    /**
+     * 保存订阅设置
+     */
     public void saveData() {
         lock.lock();
         String json = JSON.toJSONString(rssItems);
@@ -174,7 +198,13 @@ public class Config {
         }
     }
 
-    public RssItem getConfigItem(long id) {
+    /**
+     * 根据ID获取订阅项
+     *
+     * @param id ID
+     * @return RssItem
+     */
+    public RssItem getRssItem(long id) {
         lock.lock();
         for (RssItem c : rssItems) {
             if (c.id == id) {
@@ -186,6 +216,11 @@ public class Config {
         return null;
     }
 
+    /**
+     * 添加订阅项
+     *
+     * @param c RssItem
+     */
     public void addRssItem(RssItem c) {
         lock.lock();
         if (rssItems == null) {
@@ -196,6 +231,11 @@ public class Config {
         saveData();
     }
 
+    /**
+     * 删除订阅项
+     *
+     * @param c RssItem
+     */
     public void removeConfigItem(RssItem c) {
         lock.lock();
         rssItems.remove(c);
@@ -203,6 +243,12 @@ public class Config {
         saveData();
     }
 
+    /**
+     * 获取目标的订阅列表
+     *
+     * @param target 目标ID
+     * @return List<RssItem>
+     */
     public List<RssItem> getOnesConfigItems(String target) {
         List<RssItem> res = new ArrayList<>();
         lock.lock();
@@ -218,10 +264,20 @@ public class Config {
         return res;
     }
 
+    /**
+     * 获取配置的BotId
+     *
+     * @return BotId
+     */
     public String getBotId() {
         return cfg.botId;
     }
 
+    /**
+     * 生成新订阅Id
+     *
+     * @return 订阅id
+     */
     public long getNewId() {
         lock.lock();
         long id;
@@ -242,18 +298,39 @@ public class Config {
         return id;
     }
 
+    /**
+     * 获取是否自动接受好友请求
+     *
+     * @return boolean
+     */
     public boolean getAutoAcceptFriendApplication() {
         return cfg.autoAcceptFriendApplication;
     }
 
+    /**
+     * 获取是否自动接受群邀请
+     *
+     * @return boolean
+     */
     public boolean getAutoAcceptGroupApplication() {
         return cfg.autoAcceptGroupApplication;
     }
 
-    public boolean canAddSub() {
+    /**
+     * 判断是否达到订阅上限
+     *
+     * @return boolean
+     */
+    public boolean reachLimit() {
         return rssItems.size() < cfg.maxSub;
     }
 
+    /**
+     * 清除目标订阅
+     *
+     * @param target 目标Id
+     * @param type   目标类型（Friend/Group）
+     */
     public void clearConfigItem(String target, String type) {
         lock.lock();
         rssItems.removeIf(c -> c.target.equals(target) && c.type.equals(type));
@@ -261,6 +338,11 @@ public class Config {
         lock.unlock();
     }
 
+    /**
+     * 获取代理设置
+     *
+     * @return Proxy
+     */
     public Proxy getProxy() {
         String proxy_type = cfg.proxy_type;
         String proxy_address = cfg.proxy_address;
@@ -279,6 +361,11 @@ public class Config {
         return null;
     }
 
+    /**
+     * 获取代理认证
+     *
+     * @return String
+     */
     public String getProxyCredential() {
         String credential = null;
         String proxy_username = cfg.proxy_username;
@@ -289,34 +376,21 @@ public class Config {
         return credential;
     }
 
-    public String get(String url) {
-        StringBuilder stringBuilder = new StringBuilder();
-        String credential = getProxyCredential();
-        OkHttpClient okHttpClient = new OkHttpClient().newBuilder().connectTimeout(5, TimeUnit.SECONDS).proxy(getProxy()).build();
-        Request request;
-        if (credential != null) {
-            request = new Request.Builder().url(url).addHeader("Proxy-Authorization", credential).build();
-        } else {
-            request = new Request.Builder().url(url).build();
-        }
-        Response response;
-        try {
-            response = okHttpClient.newCall(request).execute();
-            BufferedReader bufferedReader = new BufferedReader(Objects.requireNonNull(response.body()).charStream());
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                stringBuilder.append(line);
-            }
-            return stringBuilder.toString();
-        } catch (Exception ignore) {
-            return null;
-        }
-    }
-
+    /**
+     * 是否开启白名单
+     *
+     * @return boolean
+     */
     public boolean whiteList() {
         return cfg.enableWhiteList;
     }
 
+    /**
+     * 判断目标是否在白名单中
+     *
+     * @param id 目标Id
+     * @return boolean
+     */
     public boolean inWhiteList(String id) {
         if (cfg.whiteList != null) {
             for (String s : cfg.whiteList) {
@@ -326,5 +400,13 @@ public class Config {
             }
         }
         return false;
+    }
+
+    /**
+     * 是否限制群内使用权限
+     * @return boolean
+     */
+    public boolean groupPermissionRestrictions() {
+        return cfg.groupPermissionRestrictions;
     }
 }

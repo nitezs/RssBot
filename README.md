@@ -25,21 +25,24 @@
 
 配置文件在 `<Mirai Console Loader>\config\RssBot\config.json`
 
-| 参数                        | 默认值    | 可选值         | 备注             |
-| --------------------------- | --------- | -------------- | ---------------- |
-| autoAcceptFriendApplication | true      | true \| false  | 自动同意好友申请 |
-| autoAcceptGroupApplication  | true      | true  \| false | 自动同意群邀请   |
-| botId                       | 123456789 |                | 机器人QQ号       |
-| maxSub                      | 100       |                | 最大订阅数量     |
-| proxy_type                  |           |                | 代理类型         |
-| proxy_address               |           |                | 代理地址         |
-| proxy_port                  |           |                | 代理端口         |
-| proxy_username              |           |                | 代理用户名       |
-| proxy_password              |           |                | 代理密码         |
+| 参数                        | 默认值      | 可选值       | 备注                                       |
+| --------------------------- | ----------- | ------------ | ------------------------------------------ |
+| autoAcceptFriendApplication | true        | true \ false | 自动同意好友申请                           |
+| autoAcceptGroupApplication  | true        | true \ false | 自动同意群邀请                             |
+| botId                       | "123456789" |              | 机器人QQ号                                 |
+| maxSub                      | 100         |              | 最大订阅数量                               |
+| proxy_type                  | ""          |              | 代理类型                                   |
+| proxy_address               | ""          |              | 代理地址                                   |
+| proxy_port                  | ""          |              | 代理端口                                   |
+| proxy_username              | ""          |              | 代理用户名                                 |
+| proxy_password              | ""          |              | 代理密码                                   |
+| enableWhiteList             | false       | true \ false | 开启白名单，只有白名单内的用户能使用机器人 |
+| whiteList                   | []          |              | 白名单                                     |
+| groupPermissionRestrictions | true        | true \ false | 群内是否只有管理员及群主能使用机器人       |
 
 # 使用方法
 
-## `#sub <url> [interval(minute)]`  
+## `#sub <url> [interval(minute)]`
 
 增加订阅
 
@@ -48,7 +51,7 @@
 | url      | 是   | Rss链接                    |
 | interval | 否   | 抓取时间间隔（单位：分钟） |
 
-## `#unsub <id>`  
+## `#unsub <id>`
 
 取消订阅
 
@@ -56,22 +59,22 @@
 | -------- | ---- | -------------------------- |
 | id      | 是   |                     |
 
-## `#setinterval <id> <interval(minute)>`  
+## `#setinterval <id> <interval(minute)>`
 
-设置抓取时间间隔  
+设置抓取时间间隔
 
 | 参数     | 必须 | 备注                       |
 | -------- | ---- | -------------------------- |
 | id      | 是   |                    |
 | interval | 是   | 抓取时间间隔（单位：分钟） |
 
-## `#list`  
+## `#list`
 
 查询订阅列表
 
-## `#detail <id>`  
+## `#detail <id>`
 
-查询订阅详情  
+查询订阅详情
 
 | 参数     | 必须 | 备注                       |
 | -------- | ---- | -------------------------- |

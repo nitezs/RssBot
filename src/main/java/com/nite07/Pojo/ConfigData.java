@@ -14,4 +14,5 @@ public class ConfigData {
     public String proxy_password;
     public boolean enableWhiteList;
     public List<String> whiteList;
+    public boolean groupPermissionRestrictions;
 }

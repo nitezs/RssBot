@@ -80,7 +80,7 @@ public class Scheduler implements Runnable {
 
     @Override
     public void run() {
-        Pair<String, List<Entry>> p = Rss.parseXML(cfg.get(c.url));
+        Pair<String, List<Entry>> p = Rss.parseXML(Rss.get(c.url, cfg));
         if (p != null) {
             for (Entry ne : p.getSecond()) {
                 boolean exist = false;
@@ -92,7 +92,7 @@ public class Scheduler implements Runnable {
                 }
                 if (!exist) {
                     c.entries.add(ne);
-                    WebDetails webDetails = Rss.getWebDetails(cfg.get(ne.link));
+                    WebDetails webDetails = Rss.getWebDetails(Rss.get(ne.link, cfg));
                     sendMessage(c.target, c.type, webDetails.imageUrl, ne.title, webDetails.description, ne.link);
                 }
             }
