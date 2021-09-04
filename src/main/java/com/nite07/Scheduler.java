@@ -92,7 +92,7 @@ public class Scheduler implements Runnable {
                 }
                 if (!exist) {
                     c.entries.add(ne);
-                    WebDetails webDetails = Rss.getWebDetails(ne.link);
+                    WebDetails webDetails = Rss.getWebDetails(cfg.get(ne.link));
                     sendMessage(c.target, c.type, webDetails.imageUrl, ne.title, webDetails.description, ne.link);
                 }
             }

@@ -7,7 +7,6 @@ import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.select.Elements;
@@ -87,12 +86,14 @@ public class Rss {
      *
      * @return WebDetails
      */
-    public static WebDetails getWebDetails(String url) {
+    public static WebDetails getWebDetails(String html) {
         WebDetails webDetails = new WebDetails();
-        try {
-            Connection conn = Jsoup.connect(url).followRedirects(true);
-            org.jsoup.nodes.Document doc = conn.userAgent("User-Agent,Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36 Edg/92.0.902.84").get();
-            Elements es = doc.select("meta[property]");
+        org.jsoup.nodes.Document doc = Jsoup.parse(html);
+        Elements es = doc.select("meta[property]");
+        if (es.size() == 0) {
+            es = doc.select("meta[name=description]");
+            webDetails.description = es.get(0).attr("content");
+        } else {
             for (org.jsoup.nodes.Element e : es) {
                 if (e.attr("property").equals("og:description")) {
                     webDetails.description = e.attr("content");
@@ -101,11 +102,6 @@ public class Rss {
                     webDetails.imageUrl = e.attr("content");
                 }
             }
-            if (webDetails.description == null) {
-                es = doc.select("meta[name=description]");
-                webDetails.description = es.get(0).attr("content");
-            }
-        } catch (Exception ignore) {
         }
         return webDetails;
     }
