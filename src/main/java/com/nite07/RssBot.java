@@ -1,6 +1,6 @@
 package com.nite07;
 
-import com.nite07.Pojo.ConfigItem;
+import com.nite07.Pojo.RssItem;
 import com.nite07.Pojo.Entry;
 import kotlin.Pair;
 import net.mamoe.mirai.Bot;
@@ -10,17 +10,14 @@ import net.mamoe.mirai.contact.Friend;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.contact.MemberPermission;
 import net.mamoe.mirai.event.GlobalEventChannel;
-import net.mamoe.mirai.event.Listener;
 import net.mamoe.mirai.event.events.*;
 import net.mamoe.mirai.message.data.At;
 import net.mamoe.mirai.message.data.MessageChain;
 import net.mamoe.mirai.message.data.PlainText;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.Response;
 
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +34,7 @@ public final class RssBot extends JavaPlugin {
     Bot myBot = null;
 
     private RssBot() {
-        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.3")
+        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.4")
                 .name("RssBot")
                 .info("A Rss Bot")
                 .author("Nite07")
@@ -63,35 +60,37 @@ public final class RssBot extends JavaPlugin {
      */
     @Override
     public void onEnable() {
-        getLogger().info("RssBot 插件已加载");
+        getLogger().info("RssBot 插件已加载，初次启动后请修改配置(config\\RssBot\\config.json)");
         cfg = new Config(getLogger());
-        Listener<MessageEvent> messageEventListener = GlobalEventChannel.INSTANCE.subscribeAlways(MessageEvent.class, g -> {
-            runCMD(g.getMessage().contentToString(), g);
-        });
-        Listener<BotOnlineEvent> botOnlineEventListener = GlobalEventChannel.INSTANCE.subscribeOnce(BotOnlineEvent.class, g -> {
+        // 监听消息
+        GlobalEventChannel.INSTANCE.subscribeAlways(MessageEvent.class, g -> runCMD(g.getMessage().contentToString(), g));
+        GlobalEventChannel.INSTANCE.subscribeOnce(BotOnlineEvent.class, g -> {
             myBot = getBotInstance();
             if (myBot != null) {
+                getLogger().info("RssBot使用账号已登录，若在使用中出现问题请给我留言（https://www.nite07.com/rssbot）");
                 loadTasks();
-            } else {
-                getLogger().info("RssBot使用账号未登录");
             }
         });
-        Listener<NewFriendRequestEvent> newFriendRequestEventListener = GlobalEventChannel.INSTANCE.subscribeAlways(NewFriendRequestEvent.class, g -> {
+
+        //监听好友请求
+        GlobalEventChannel.INSTANCE.subscribeAlways(NewFriendRequestEvent.class, g -> {
             if (cfg.getAutoAcceptFriendApplication()) {
                 g.accept();
             }
         });
-        Listener<BotInvitedJoinGroupRequestEvent> botInvitedJoinGroupRequestEventListener = GlobalEventChannel.INSTANCE.subscribeAlways(BotInvitedJoinGroupRequestEvent.class, g -> {
+
+        //监听群邀请
+        GlobalEventChannel.INSTANCE.subscribeAlways(BotInvitedJoinGroupRequestEvent.class, g -> {
             if (cfg.getAutoAcceptGroupApplication()) {
                 g.accept();
             }
         });
-        Listener<BotLeaveEvent> botLeaveEventListener = GlobalEventChannel.INSTANCE.subscribeAlways(BotLeaveEvent.class, g -> {
-            cfg.clearConfigItem(String.valueOf(g.getGroup().getId()), "Group");
-        });
-        Listener<FriendDeleteEvent> friendDeleteEventListener = GlobalEventChannel.INSTANCE.subscribeAlways(FriendDeleteEvent.class, g -> {
-            cfg.clearConfigItem(String.valueOf(g.getFriend().getId()), "Friend");
-        });
+
+        //监听退群事件
+        GlobalEventChannel.INSTANCE.subscribeAlways(BotLeaveEvent.class, g -> cfg.clearConfigItem(String.valueOf(g.getGroup().getId()), "Group"));
+
+        //监听好友删除事件
+        GlobalEventChannel.INSTANCE.subscribeAlways(FriendDeleteEvent.class, g -> cfg.clearConfigItem(String.valueOf(g.getFriend().getId()), "Friend"));
     }
 
     /**
@@ -129,10 +128,18 @@ public final class RssBot extends JavaPlugin {
      * @return boolean
      */
     public boolean checkUrl(String url) {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).timeout(Duration.ofSeconds(5)).build();
+        String credential = cfg.getProxyCredential();
+        OkHttpClient okHttpClient = new OkHttpClient().newBuilder().connectTimeout(5, TimeUnit.SECONDS).proxy(cfg.getProxy()).build();
+        Request request;
+        if (credential != null) {
+            request = new Request.Builder().url(url).addHeader("Proxy-Authorization", credential).build();
+        } else {
+            request = new Request.Builder().url(url).build();
+        }
+        Response response;
         try {
-            return client.send(request, HttpResponse.BodyHandlers.ofString()).statusCode() == 200;
+            response = okHttpClient.newCall(request).execute();
+            return response.isSuccessful();
         } catch (Exception ignore) {
             return false;
         }
@@ -161,7 +168,7 @@ public final class RssBot extends JavaPlugin {
      * @param c ConfigItem
      * @return boolean
      */
-    public boolean isSubOwner(MessageEvent g, ConfigItem c) {
+    public boolean isSubOwner(MessageEvent g, RssItem c) {
         return String.valueOf(g.getSubject().getId()).equals(c.target);
     }
 
@@ -197,9 +204,9 @@ public final class RssBot extends JavaPlugin {
      * 插件启用后添加 Tasks
      */
     public void loadTasks() {
-        List<ConfigItem> cis = cfg.getConfigItems();
+        List<RssItem> cis = cfg.getRssItems();
         if (cis != null) {
-            for (ConfigItem c : cis) {
+            for (RssItem c : cis) {
                 tasks.put(c.id, executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, c.interval, TimeUnit.MINUTES));
             }
         }
@@ -212,6 +219,7 @@ public final class RssBot extends JavaPlugin {
      * @param g   MessageEvent
      */
     public void runCMD(String cmd, MessageEvent g) {
+        cmd = cmd.trim();
         if (cmd.startsWith("#")) {
             String[] slice = cmd.split(" ");
             int paramNum = slice.length - 1;
@@ -221,25 +229,37 @@ public final class RssBot extends JavaPlugin {
                         if (paramNum == 1) {
                             if (cfg.canAddSub()) {
                                 long id = cfg.getNewId();
-                                Pair<String, List<Entry>> p = Rss.parseXML(slice[1]);
-                                ConfigItem c = new ConfigItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], 10, p.getFirst(), p.getSecond());
-                                cfg.addConfigItem(c);
+                                String xml = cfg.get(slice[1]);
+                                Pair<String, List<Entry>> p = Rss.parseXML(xml);
+                                if (p == null) {
+                                    getLogger().warning("添加订阅发生异常，订阅链接为：" + slice[1]);
+                                    sendMessage(g, "添加订阅发生异常");
+                                    return;
+                                }
+                                RssItem c = new RssItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], 10, p.getFirst(), p.getSecond());
+                                cfg.addRssItem(c);
                                 tasks.put(id, executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, 10, TimeUnit.MINUTES));
-                                sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\nUrl：" + c.url + "\n抓取频率：10分钟");
+                                sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：10分钟");
                             } else {
-                                sendMessage(g, "总订阅量已达上限，你可以自己搭建一个RssBot\nhttps://github.com/NiTian1207/RssBot");
+                                sendMessage(g, "总订阅量已达上限，你可以自己搭建一个RssBot\nhttps://www.nite07.com/rssbot");
                             }
                         } else if (paramNum == 2) {
                             if (isDigit(slice[2])) {
                                 if (cfg.canAddSub()) {
                                     long id = cfg.getNewId();
-                                    Pair<String, List<Entry>> p = Rss.parseXML(slice[1]);
-                                    ConfigItem c = new ConfigItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], Integer.parseInt(slice[2]), p.getFirst(), p.getSecond());
-                                    cfg.addConfigItem(c);
+                                    String xml = cfg.get(slice[1]);
+                                    Pair<String, List<Entry>> p = Rss.parseXML(xml);
+                                    if (p == null) {
+                                        getLogger().warning("添加订阅发生异常，订阅链接为：" + slice[1]);
+                                        sendMessage(g, "添加订阅发生异常");
+                                        return;
+                                    }
+                                    RssItem c = new RssItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], Integer.parseInt(slice[2]), p.getFirst(), p.getSecond());
+                                    cfg.addRssItem(c);
                                     tasks.put(id, executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, Integer.parseInt(slice[2]), TimeUnit.MINUTES));
-                                    sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\nUrl：" + c.url + "\n抓取频率：" + slice[2] + "分钟");
+                                    sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + slice[2] + "分钟");
                                 } else {
-                                    sendMessage(g, "总订阅量已达上限，你可以自己搭建一个RssBot\nhttps://github.com/NiTian1207/RssBot");
+                                    sendMessage(g, "总订阅量已达上限，你可以自己搭建一个RssBot\nhttps://www.nite07.com/rssbot");
                                 }
                             } else {
                                 sendMessage(g, "参数错误");
@@ -256,13 +276,13 @@ public final class RssBot extends JavaPlugin {
             } else if (cmd.startsWith("#unsub")) {
                 if (checkSenderPerm(g)) {
                     if (paramNum == 1 && strToLong(slice[1]) != -1) {
-                        ConfigItem c = cfg.getConfigItem(Long.parseLong(slice[1]));
+                        RssItem c = cfg.getConfigItem(Long.parseLong(slice[1]));
                         if (c != null) {
                             if (isSubOwner(g, c)) {
                                 tasks.get(strToLong(slice[1])).cancel(true);
                                 tasks.remove(strToLong(slice[1]));
                                 cfg.removeConfigItem(c);
-                                sendMessage(g, "订阅已取消\n" + "ID：" + c.id + "\n标题：" + c.title + "\nUrl：" + c.url);
+                                sendMessage(g, "订阅已取消\n" + "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url);
                             } else {
                                 sendMessage(g, "没有操作权限");
                             }
@@ -278,13 +298,13 @@ public final class RssBot extends JavaPlugin {
             } else if (cmd.startsWith("#setinterval")) {
                 if (checkSenderPerm(g)) {
                     if (paramNum == 2 && strToLong(slice[1]) != -1 && strToLong(slice[2]) != -1) {
-                        ConfigItem c = cfg.getConfigItem(Long.parseLong(slice[1]));
+                        RssItem c = cfg.getConfigItem(Long.parseLong(slice[1]));
                         if (c != null) {
                             tasks.get(strToLong(slice[1])).cancel(true);
                             tasks.put(strToLong(slice[1]), executor.scheduleWithFixedDelay(new Scheduler(c, myBot, getLogger(), cfg), 0, strToLong(slice[2]), TimeUnit.MINUTES));
                             c.interval = Integer.parseInt(slice[2]);
-                            cfg.saveConfig();
-                            sendMessage(g, "抓取频率已修改\n" + "ID：" + c.id + "\n标题：" + c.title + "\nUrl：" + c.url + "\n抓取频率：" + c.interval + "分钟");
+                            cfg.saveData();
+                            sendMessage(g, "抓取频率已修改\n" + "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + c.interval + "分钟");
                         } else {
                             sendMessage(g, "未找到订阅");
                         }
@@ -297,12 +317,12 @@ public final class RssBot extends JavaPlugin {
             } else if (cmd.equals("#list")) {
                 if (checkSenderPerm(g)) {
                     if (paramNum == 0) {
-                        List<ConfigItem> cs = cfg.getOnesConfigItems(String.valueOf(g.getSubject().getId()));
+                        List<RssItem> cs = cfg.getOnesConfigItems(String.valueOf(g.getSubject().getId()));
                         if (cs.size() != 0) {
                             StringBuilder stringBuilder = new StringBuilder();
                             stringBuilder.append("当前有").append(cs.size()).append("条订阅:\n");
-                            for (ConfigItem c : cs) {
-                                stringBuilder.append("\nID：").append(c.id).append("\n标题：").append(c.title).append("\nUrl").append(c.url).append("\n");
+                            for (RssItem c : cs) {
+                                stringBuilder.append("\nID：").append(c.id).append("\n标题：").append(c.title).append("\n链接：").append(c.url).append("\n");
                             }
                             sendMessage(g, stringBuilder.toString());
                         } else {
@@ -315,19 +335,19 @@ public final class RssBot extends JavaPlugin {
                     sendMessage(g, "没有操作权限");
                 }
             } else if (cmd.equals("#help")) {
-                String t = "#sub <url> [interval(minute)]\t添加订阅\n" +
-                        "#unsub <id>\t取消订阅\n" +
-                        "#setinterval <id> <interval(minute)>\t设置抓取间隔（单位：分钟）\n" +
-                        "#list\t列出当前订阅\n" +
-                        "#detail <id>\t查询订阅详细信息\n" +
+                String t = "#sub <url> [interval(minute)]\n添加订阅\n" +
+                        "#unsub <id>\n取消订阅\n" +
+                        "#setinterval <id> <interval(minute)>\n设置抓取间隔（单位：分钟）\n" +
+                        "#list\n列出当前订阅\n" +
+                        "#detail <id>\n查询订阅详细信息\n" +
                         "<>为必须参数，[]为可选参数";
                 sendMessage(g, t);
             } else if (cmd.startsWith("#detail")) {
                 if (checkSenderPerm(g)) {
                     if (paramNum == 1) {
                         if (strToLong(slice[1]) != -1) {
-                            ConfigItem c = cfg.getConfigItem(strToLong(slice[1]));
-                            sendMessage(g, "ID：" + c.id + "\n标题：" + c.title + "\nUrl：" + c.url + "\n抓取频率：" + c.interval + "分钟\n");
+                            RssItem c = cfg.getConfigItem(strToLong(slice[1]));
+                            sendMessage(g, "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + c.interval + "分钟\n");
                         } else {
                             sendMessage(g, "参数错误");
                         }

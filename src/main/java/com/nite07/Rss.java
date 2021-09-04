@@ -5,6 +5,7 @@ import com.nite07.Pojo.WebDetails;
 import kotlin.Pair;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
+import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 import org.jsoup.Connection;
@@ -21,10 +22,9 @@ import java.util.Locale;
 
 public class Rss {
 
-    public static Pair<String, List<Entry>> parseXML(String u) {
-        SAXReader saxReader = new SAXReader();
+    public static Pair<String, List<Entry>> parseXML(String xml) {
         try {
-            Document doc = saxReader.read(u);
+            Document doc = DocumentHelper.parseText(xml);
             Element root = doc.getRootElement();
             String type = root.getName();
             if (type.equals("rss")) {

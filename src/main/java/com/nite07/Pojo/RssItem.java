@@ -2,7 +2,7 @@ package com.nite07.Pojo;
 
 import java.util.List;
 
-public class ConfigItem {
+public class RssItem {
     public long id;
     public String type;
     public String target;
@@ -11,7 +11,7 @@ public class ConfigItem {
     public String title;
     public List<Entry> entries;
 
-    public ConfigItem(long id, String type, String target, String url, int interval, String title, List<Entry> entries) {
+    public RssItem(long id, String type, String target, String url, int interval, String title, List<Entry> entries) {
         this.id = id;
         this.type = type;
         this.target = target;
