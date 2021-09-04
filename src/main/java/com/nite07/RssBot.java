@@ -34,7 +34,7 @@ public final class RssBot extends JavaPlugin {
     Bot myBot = null;
 
     private RssBot() {
-        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.4")
+        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.5")
                 .name("RssBot")
                 .info("A Rss Bot")
                 .author("Nite07")
