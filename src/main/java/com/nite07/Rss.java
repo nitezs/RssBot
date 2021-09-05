@@ -30,6 +30,9 @@ public class Rss {
      */
     public static Pair<String, List<Entry>> parseXML(String xml) {
         try {
+            if (xml == null) {
+                return null;
+            }
             Document doc = DocumentHelper.parseText(xml);
             Element root = doc.getRootElement();
             String type = root.getName();

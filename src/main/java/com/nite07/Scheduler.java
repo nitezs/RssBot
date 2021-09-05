@@ -50,7 +50,10 @@ public class Scheduler implements Runnable {
                         Image img = null;
                         try {
                             img = Contact.uploadImage(group, new URL(imageUrl).openConnection().getInputStream());
-                        } catch (Exception ignore) {
+                        } catch (Exception e) {
+                            if (cfg.debug()) {
+                                logger.warning(Arrays.toString(e.getStackTrace()));
+                            }
                         }
                         msg = msg.plus(p3);
                         if (img != null) {
@@ -66,7 +69,10 @@ public class Scheduler implements Runnable {
                         Image img = null;
                         try {
                             img = Contact.uploadImage(friend, new URL(imageUrl).openConnection().getInputStream());
-                        } catch (Exception ignore) {
+                        } catch (Exception e) {
+                            if (cfg.debug()) {
+                                logger.warning(Arrays.toString(e.getStackTrace()));
+                            }
                         }
                         msg = msg.plus(p3);
                         if (img != null) {
@@ -82,8 +88,17 @@ public class Scheduler implements Runnable {
     @Override
     public void run() {
         try {
-            logger.info(c.id + "：开始抓取");
-            Pair<String, List<Entry>> p = Rss.parseXML(Rss.get(c.url, cfg));
+            if (cfg.debug()) {
+                logger.info("ID：" + c.id + "开始抓取");
+            }
+            String xml = Rss.get(c.url, cfg);
+            if (xml == null) {
+                if (cfg.debug()) {
+                    logger.warning("ID：" + c.id + "抓取失败，抓取链接为 " + c.url);
+                }
+                return;
+            }
+            Pair<String, List<Entry>> p = Rss.parseXML(xml);
             if (p != null) {
                 for (Entry ne : p.getSecond()) {
                     boolean exist = false;
@@ -102,8 +117,10 @@ public class Scheduler implements Runnable {
                 cfg.saveData();
             }
         } catch (Exception e) {
-            logger.warning(e.getMessage());
-            logger.warning(Arrays.toString(e.getStackTrace()));
+            if (cfg.debug()) {
+                logger.warning(e.getMessage());
+                logger.warning(Arrays.toString(e.getStackTrace()));
+            }
         }
     }
 }

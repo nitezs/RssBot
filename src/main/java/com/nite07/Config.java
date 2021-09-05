@@ -40,7 +40,8 @@ public class Config {
                     stringBuilder.append(line);
                 }
                 cfg = stringBuilder.toString();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                logger.warning(Arrays.toString(e.getStackTrace()));
             }
             this.cfg = JSON.parseObject(cfg, ConfigData.class);
         }
@@ -57,7 +58,8 @@ public class Config {
                     stringBuilder.append(line);
                 }
                 data = stringBuilder.toString();
-            } catch (Exception ignored) {
+            } catch (Exception e) {
+                logger.warning(Arrays.toString(e.getStackTrace()));
             }
             this.rssItems = JSON.parseArray(data, RssItem.class);
             if (this.rssItems == null) {
@@ -162,6 +164,7 @@ public class Config {
         cfg.groupPermissionRestrictions = true;
         cfg.whiteList = new ArrayList<>();
         cfg.botAdmins = new ArrayList<>();
+        cfg.deBug = false;
         saveConfig();
     }
 
@@ -183,7 +186,8 @@ public class Config {
              BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
             bufferedWriter.write(json);
             bufferedWriter.flush();
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            logger.warning(Arrays.toString(e.getStackTrace()));
         }
     }
 
@@ -236,7 +240,8 @@ public class Config {
              BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
             bufferedWriter.write(json);
             bufferedWriter.flush();
-        } catch (IOException ignored) {
+        } catch (IOException e) {
+            logger.warning(Arrays.toString(e.getStackTrace()));
         } finally {
             lock.unlock();
         }
@@ -463,5 +468,9 @@ public class Config {
      */
     public boolean isBotAdmin(String id) {
         return cfg.botAdmins.contains(id);
+    }
+
+    public boolean debug() {
+        return cfg.deBug;
     }
 }

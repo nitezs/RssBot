@@ -16,4 +16,5 @@ public class ConfigData {
     public List<String> whiteList;
     public boolean groupPermissionRestrictions;
     public List<String> botAdmins;
+    public boolean deBug;
 }

@@ -40,6 +40,7 @@
 | whiteList                   | []          |              | 白名单                                     |
 | groupPermissionRestrictions | true        | true \ false | 群内是否只有管理员及群主能使用机器人       |
 | BotAdmins                   | []          |              | 机器人管理员列表                             |
+| deBug                       | false       | true \ false | 开启Debug模式                               |
 
 # 使用方法
 
@@ -84,3 +85,7 @@
 ## `#status`
 
 获取机器人状态信息
+
+## `#listall`
+
+查询所有订阅项（需要机器人管理员权限）
