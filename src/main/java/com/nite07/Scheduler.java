@@ -12,6 +12,7 @@ import net.mamoe.mirai.message.data.*;
 import net.mamoe.mirai.utils.MiraiLogger;
 
 import java.net.URL;
+import java.util.Arrays;
 import java.util.List;
 
 public class Scheduler implements Runnable {
@@ -80,24 +81,29 @@ public class Scheduler implements Runnable {
 
     @Override
     public void run() {
-        logger.info(c.id + "：开始抓取");
-        Pair<String, List<Entry>> p = Rss.parseXML(Rss.get(c.url, cfg));
-        if (p != null) {
-            for (Entry ne : p.getSecond()) {
-                boolean exist = false;
-                for (Entry oe : c.entries) {
-                    if (ne.title.equals(oe.title) || ne.link.equals(oe.link)) {
-                        exist = true;
-                        break;
+        try {
+            logger.info(c.id + "：开始抓取");
+            Pair<String, List<Entry>> p = Rss.parseXML(Rss.get(c.url, cfg));
+            if (p != null) {
+                for (Entry ne : p.getSecond()) {
+                    boolean exist = false;
+                    for (Entry oe : c.entries) {
+                        if (ne.title.equals(oe.title) || ne.link.equals(oe.link)) {
+                            exist = true;
+                            break;
+                        }
+                    }
+                    if (!exist) {
+                        c.entries.add(ne);
+                        WebDetails webDetails = Rss.getWebDetails(Rss.get(ne.link, cfg));
+                        sendMessage(c.target, c.type, webDetails.imageUrl, ne.title, webDetails.description, ne.link);
                     }
                 }
-                if (!exist) {
-                    c.entries.add(ne);
-                    WebDetails webDetails = Rss.getWebDetails(Rss.get(ne.link, cfg));
-                    sendMessage(c.target, c.type, webDetails.imageUrl, ne.title, webDetails.description, ne.link);
-                }
+                cfg.saveData();
             }
-            cfg.saveData();
+        } catch (Exception e) {
+            logger.warning(e.getMessage());
+            logger.warning(Arrays.toString(e.getStackTrace()));
         }
     }
 }

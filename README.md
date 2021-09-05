@@ -39,6 +39,7 @@
 | enableWhiteList             | false       | true \ false | 开启白名单，只有白名单内的用户能使用机器人 |
 | whiteList                   | []          |              | 白名单                                     |
 | groupPermissionRestrictions | true        | true \ false | 群内是否只有管理员及群主能使用机器人       |
+| BotAdmins                   | []          |              | 机器人管理员列表                             |
 
 # 使用方法
 
@@ -79,3 +80,7 @@
 | 参数     | 必须 | 备注                       |
 | -------- | ---- | -------------------------- |
 | id      | 是   |                     |
+
+## `#status`
+
+获取机器人状态信息

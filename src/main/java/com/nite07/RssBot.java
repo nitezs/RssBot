@@ -232,6 +232,9 @@ public final class RssBot extends JavaPlugin {
      * @param g   MessageEvent
      */
     public void runCMD(String cmd, MessageEvent g) {
+        if (cmd == null) {
+            return;
+        }
         cmd = cmd.trim();
         boolean isBotAdmin = cfg.isBotAdmin(String.valueOf(g.getSender().getId()));
         if (cmd.startsWith("#")) {
@@ -331,12 +334,7 @@ public final class RssBot extends JavaPlugin {
             } else if (cmd.equals("#list")) {
                 if (checkSenderPerm(g) || isBotAdmin) {
                     if (paramNum == 0) {
-                        List<RssItem> cs;
-                        if (isBotAdmin) {
-                            cs = cfg.getRssItems();
-                        } else {
-                            cs = cfg.getOnesConfigItems(String.valueOf(g.getSubject().getId()));
-                        }
+                        List<RssItem> cs = cfg.getOnesConfigItems(String.valueOf(g.getSubject().getId()));
                         if (cs.size() != 0) {
                             StringBuilder stringBuilder = new StringBuilder();
                             stringBuilder.append("当前有").append(cs.size()).append("条订阅:\n");
@@ -376,9 +374,25 @@ public final class RssBot extends JavaPlugin {
                 } else {
                     sendMessage(g, "没有操作权限");
                 }
-            } else if (cmd.startsWith("#status")) {
+            } else if (cmd.equals("#status")) {
                 if (isBotAdmin) {
                     sendMessage(g, cfg.getLog());
+                } else {
+                    sendMessage(g, "没有操作权限");
+                }
+            } else if (cmd.equals("#listall")) {
+                if (isBotAdmin) {
+                    List<RssItem> cs = cfg.getRssItems();
+                    if (cs.size() != 0) {
+                        StringBuilder stringBuilder = new StringBuilder();
+                        stringBuilder.append("当前有").append(cs.size()).append("条订阅:\n");
+                        for (RssItem c : cs) {
+                            stringBuilder.append("\nID：").append(c.id).append("\n标题：").append(c.title).append("\n链接：").append(c.url).append("\n");
+                        }
+                        sendMessage(g, stringBuilder.toString());
+                    } else {
+                        sendMessage(g, "当前无订阅");
+                    }
                 } else {
                     sendMessage(g, "没有操作权限");
                 }
