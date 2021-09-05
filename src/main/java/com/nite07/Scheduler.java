@@ -9,7 +9,6 @@ import net.mamoe.mirai.contact.Contact;
 import net.mamoe.mirai.contact.Friend;
 import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.message.data.*;
-import net.mamoe.mirai.utils.MiraiLogger;
 
 import java.net.URL;
 import java.util.Arrays;
@@ -19,14 +18,12 @@ public class Scheduler implements Runnable {
 
     RssItem c;
     Bot bot;
-    MiraiLogger logger;
     Config cfg;
 
-    public Scheduler(RssItem c, Bot bot, MiraiLogger logger, Config cfg) {
+    public Scheduler(RssItem c) {
         this.c = c;
-        this.bot = bot;
-        this.logger = logger;
-        this.cfg = cfg;
+        this.bot = RssBot.myBot;
+        this.cfg = RssBot.cfg;
     }
 
     /**
@@ -49,10 +46,13 @@ public class Scheduler implements Runnable {
                     if (group != null) {
                         Image img = null;
                         try {
-                            img = Contact.uploadImage(group, new URL(imageUrl).openConnection().getInputStream());
+                            if (imageUrl != null) {
+                                img = Contact.uploadImage(group, new URL(imageUrl).openConnection().getInputStream());
+                            }
                         } catch (Exception e) {
                             if (cfg.debug()) {
-                                logger.warning(Arrays.toString(e.getStackTrace()));
+                                RssBot.logger.warning(e.getMessage());
+                                RssBot.logger.warning(Arrays.toString(e.getStackTrace()));
                             }
                         }
                         msg = msg.plus(p3);
@@ -68,10 +68,13 @@ public class Scheduler implements Runnable {
                     if (friend != null) {
                         Image img = null;
                         try {
-                            img = Contact.uploadImage(friend, new URL(imageUrl).openConnection().getInputStream());
+                            if (imageUrl != null) {
+                                img = Contact.uploadImage(friend, new URL(imageUrl).openConnection().getInputStream());
+                            }
                         } catch (Exception e) {
                             if (cfg.debug()) {
-                                logger.warning(Arrays.toString(e.getStackTrace()));
+                                RssBot.logger.warning(e.getMessage());
+                                RssBot.logger.warning(Arrays.toString(e.getStackTrace()));
                             }
                         }
                         msg = msg.plus(p3);
@@ -89,12 +92,12 @@ public class Scheduler implements Runnable {
     public void run() {
         try {
             if (cfg.debug()) {
-                logger.info("ID：" + c.id + "开始抓取");
+                RssBot.logger.info("ID：" + c.id + "开始抓取");
             }
-            String xml = Rss.get(c.url, cfg);
+            String xml = Rss.get(c.url);
             if (xml == null) {
                 if (cfg.debug()) {
-                    logger.warning("ID：" + c.id + "抓取失败，抓取链接为 " + c.url);
+                    RssBot.logger.warning("ID：" + c.id + "抓取失败，抓取链接为 " + c.url);
                 }
                 return;
             }
@@ -110,7 +113,7 @@ public class Scheduler implements Runnable {
                     }
                     if (!exist) {
                         c.entries.add(ne);
-                        WebDetails webDetails = Rss.getWebDetails(Rss.get(ne.link, cfg));
+                        WebDetails webDetails = Rss.getWebDetails(Rss.get(ne.link));
                         sendMessage(c.target, c.type, webDetails.imageUrl, ne.title, webDetails.description, ne.link);
                     }
                 }
@@ -118,8 +121,8 @@ public class Scheduler implements Runnable {
             }
         } catch (Exception e) {
             if (cfg.debug()) {
-                logger.warning(e.getMessage());
-                logger.warning(Arrays.toString(e.getStackTrace()));
+                RssBot.logger.warning(e.getMessage());
+                RssBot.logger.warning(Arrays.toString(e.getStackTrace()));
             }
         }
     }

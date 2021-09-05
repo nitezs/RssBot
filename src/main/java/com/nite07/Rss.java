@@ -107,13 +107,12 @@ public class Rss {
      * 获取网页数据
      *
      * @param url 网页链接
-     * @param cfg 配置实例（获取代理信息）
      * @return html
      */
-    public static String get(String url, Config cfg) {
+    public static String get(String url) {
         StringBuilder stringBuilder = new StringBuilder();
-        String credential = cfg.getProxyCredential();
-        OkHttpClient okHttpClient = new OkHttpClient().newBuilder().connectTimeout(5, TimeUnit.SECONDS).proxy(cfg.getProxy()).build();
+        String credential = RssBot.cfg.getProxyCredential();
+        OkHttpClient okHttpClient = new OkHttpClient().newBuilder().connectTimeout(5, TimeUnit.SECONDS).proxy(RssBot.cfg.getProxy()).build();
         Request request;
         if (credential != null) {
             request = new Request.Builder().url(url).addHeader("Proxy-Authorization", credential).build();
@@ -129,7 +128,9 @@ public class Rss {
                 stringBuilder.append(line);
             }
             return stringBuilder.toString();
-        } catch (Exception ignore) {
+        } catch (Exception e) {
+            RssBot.logger.warning(e.getMessage());
+            RssBot.logger.warning(Arrays.toString(e.getStackTrace()));
             return null;
         }
     }

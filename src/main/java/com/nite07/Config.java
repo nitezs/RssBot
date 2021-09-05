@@ -25,8 +25,8 @@ public class Config {
     private ConfigData cfg;
     private List<RssItem> rssItems;
 
-    public Config(MiraiLogger logger) {
-        this.logger = logger;
+    public Config() {
+        this.logger = RssBot.logger;
         if (!configExist()) {
             initConfig();
         } else {
@@ -41,6 +41,7 @@ public class Config {
                 }
                 cfg = stringBuilder.toString();
             } catch (Exception e) {
+                logger.warning(e.getMessage());
                 logger.warning(Arrays.toString(e.getStackTrace()));
             }
             this.cfg = JSON.parseObject(cfg, ConfigData.class);
@@ -59,6 +60,7 @@ public class Config {
                 }
                 data = stringBuilder.toString();
             } catch (Exception e) {
+                logger.warning(e.getMessage());
                 logger.warning(Arrays.toString(e.getStackTrace()));
             }
             this.rssItems = JSON.parseArray(data, RssItem.class);
@@ -187,6 +189,7 @@ public class Config {
             bufferedWriter.write(json);
             bufferedWriter.flush();
         } catch (IOException e) {
+            logger.warning(e.getMessage());
             logger.warning(Arrays.toString(e.getStackTrace()));
         }
     }
@@ -241,6 +244,7 @@ public class Config {
             bufferedWriter.write(json);
             bufferedWriter.flush();
         } catch (IOException e) {
+            logger.warning(e.getMessage());
             logger.warning(Arrays.toString(e.getStackTrace()));
         } finally {
             lock.unlock();
