@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.nite07"
-version = "1.6"
+version = "1.7"
 
 repositories {
     maven("https://maven.aliyun.com/repository/public")

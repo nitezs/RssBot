@@ -80,6 +80,7 @@ public class Scheduler implements Runnable {
 
     @Override
     public void run() {
+        logger.info(c.id + "：开始抓取");
         Pair<String, List<Entry>> p = Rss.parseXML(Rss.get(c.url, cfg));
         if (p != null) {
             for (Entry ne : p.getSecond()) {

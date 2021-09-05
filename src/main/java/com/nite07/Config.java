@@ -64,39 +64,75 @@ public class Config {
                 this.rssItems = new ArrayList<>();
             }
         }
-        logConfig();
+        checkConfig();
+        logger.info("\n" + getLog());
+    }
+
+    private void checkConfig() {
+        if (cfg.botAdmins == null) {
+            cfg.botAdmins = new ArrayList<>();
+        }
+        if (cfg.whiteList == null) {
+            cfg.whiteList = new ArrayList<>();
+        }
+        if (cfg.proxy_password == null) {
+            cfg.proxy_password = "";
+        }
+        if (cfg.proxy_username == null) {
+            cfg.proxy_username = "";
+        }
+        if (cfg.proxy_type == null) {
+            cfg.proxy_type = "";
+        }
+        if (cfg.botId == null) {
+            cfg.botId = "123456789";
+        }
+        if (cfg.proxy_address == null) {
+            cfg.proxy_address = "";
+        }
+        saveConfig();
     }
 
     /**
      * 在 Mirai 终端打印配置信息
      */
-    public void logConfig() {
-        StringBuilder log = new StringBuilder("\nRssBotID：\t\t")
+    public String getLog() {
+        StringBuilder log = new StringBuilder("RssBotID：")
                 .append(cfg.botId)
-                .append("\n自动接受好友请求：\t")
+                .append("\n自动接受好友请求：")
                 .append(cfg.autoAcceptFriendApplication)
-                .append("\n自动接受群邀请：\t")
+                .append("\n自动接受群邀请：")
                 .append(cfg.autoAcceptGroupApplication)
-                .append("\n最大订阅数量：\t\t")
-                .append(cfg.maxSub);
+                .append("\n最大订阅数量：")
+                .append(cfg.maxSub)
+                .append("\n已有订阅数量：")
+                .append(rssItems.size())
+                .append("\n管理员列表：[");
+        if (cfg.botAdmins.size() != 0) {
+            for (String id : cfg.botAdmins) {
+                log.append(id).append(",");
+            }
+            log.deleteCharAt(log.length() - 1);
+        }
+        log.append("]");
         if ((cfg.proxy_type.equalsIgnoreCase("http") || cfg.proxy_type.equalsIgnoreCase("socks"))
                 && !cfg.proxy_address.isEmpty() && cfg.proxy_port != 0) {
-            log.append("\n代理类型：\t\t")
+            log.append("\n代理类型：")
                     .append(cfg.proxy_type)
-                    .append("\n代理地址：\t\t")
+                    .append("\n代理地址：")
                     .append(cfg.proxy_address)
-                    .append("\n代理端口：\t\t")
+                    .append("\n代理端口：")
                     .append(cfg.proxy_port);
             if (!cfg.proxy_username.isEmpty() && !cfg.proxy_password.isEmpty()) {
-                log.append("\n代理用户名：\t\t")
+                log.append("\n代理用户名：")
                         .append(cfg.proxy_username)
-                        .append("\n代理密码：\t\t")
+                        .append("\n代理密码：")
                         .append(cfg.proxy_password);
             }
         } else {
             log.append("\n未设置代理");
         }
-        logger.info(log.toString());
+        return log.toString();
     }
 
     /**
@@ -125,6 +161,14 @@ public class Config {
         cfg.enableWhiteList = false;
         cfg.groupPermissionRestrictions = true;
         cfg.whiteList = new ArrayList<>();
+        cfg.botAdmins = new ArrayList<>();
+        saveConfig();
+    }
+
+    /**
+     * 保存配置
+     */
+    public void saveConfig() {
         String json = JSON.toJSONString(cfg, SerializerFeature.PrettyFormat);
         File file = new File(configPath);
         if (!file.exists()) {
@@ -404,9 +448,20 @@ public class Config {
 
     /**
      * 是否限制群内使用权限
+     *
      * @return boolean
      */
     public boolean groupPermissionRestrictions() {
         return cfg.groupPermissionRestrictions;
+    }
+
+    /**
+     * 判断是否为机器人管理员
+     *
+     * @param id ID
+     * @return boolean
+     */
+    public boolean isBotAdmin(String id) {
+        return cfg.botAdmins.contains(id);
     }
 }

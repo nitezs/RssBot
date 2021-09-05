@@ -21,20 +21,17 @@ import okhttp3.Response;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public final class RssBot extends JavaPlugin {
     public static final RssBot INSTANCE = new RssBot();
     public Config cfg = null;
     Map<Long, ScheduledFuture<?>> tasks = new HashMap<>();
-    ScheduledExecutorService executor = Executors.newScheduledThreadPool(3);
+    ScheduledExecutorService executor = Executors.newScheduledThreadPool(Integer.MAX_VALUE);
     Bot myBot = null;
 
     private RssBot() {
-        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.6")
+        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.7")
                 .name("RssBot")
                 .info("A Rss Bot")
                 .author("Nite07")
@@ -63,34 +60,34 @@ public final class RssBot extends JavaPlugin {
         getLogger().info("RssBot 插件已加载，初次启动后请修改配置(config\\RssBot\\config.json)");
         cfg = new Config(getLogger());
         // 监听消息
-        GlobalEventChannel.INSTANCE.subscribeAlways(MessageEvent.class, g -> runCMD(g.getMessage().contentToString(), g));
-        GlobalEventChannel.INSTANCE.subscribeOnce(BotOnlineEvent.class, g -> {
+        GlobalEventChannel.INSTANCE.subscribeAlways(MessageEvent.class, g -> new Thread(() -> runCMD(g.getMessage().contentToString(), g)).start());
+        GlobalEventChannel.INSTANCE.subscribeOnce(BotOnlineEvent.class, g -> new Thread(() -> {
             myBot = getBotInstance();
             if (myBot != null) {
                 getLogger().info("RssBot使用账号已登录，若在使用中出现问题请给我留言（https://www.nite07.com/rssbot）");
                 loadTasks();
             }
-        });
+        }).start());
 
         //监听好友请求
-        GlobalEventChannel.INSTANCE.subscribeAlways(NewFriendRequestEvent.class, g -> {
+        GlobalEventChannel.INSTANCE.subscribeAlways(NewFriendRequestEvent.class, g -> new Thread(() -> {
             if (cfg.getAutoAcceptFriendApplication()) {
                 g.accept();
             }
-        });
+        }).start());
 
         //监听群邀请
-        GlobalEventChannel.INSTANCE.subscribeAlways(BotInvitedJoinGroupRequestEvent.class, g -> {
+        GlobalEventChannel.INSTANCE.subscribeAlways(BotInvitedJoinGroupRequestEvent.class, g -> new Thread(() -> {
             if (cfg.getAutoAcceptGroupApplication()) {
                 g.accept();
             }
-        });
+        }).start());
 
         //监听退群事件
-        GlobalEventChannel.INSTANCE.subscribeAlways(BotLeaveEvent.class, g -> cfg.clearConfigItem(String.valueOf(g.getGroup().getId()), "Group"));
+        GlobalEventChannel.INSTANCE.subscribeAlways(BotLeaveEvent.class, g -> new Thread(() -> cfg.clearConfigItem(String.valueOf(g.getGroup().getId()), "Group")).start());
 
         //监听好友删除事件
-        GlobalEventChannel.INSTANCE.subscribeAlways(FriendDeleteEvent.class, g -> cfg.clearConfigItem(String.valueOf(g.getFriend().getId()), "Friend"));
+        GlobalEventChannel.INSTANCE.subscribeAlways(FriendDeleteEvent.class, g -> new Thread(() -> cfg.clearConfigItem(String.valueOf(g.getFriend().getId()), "Friend")).start());
     }
 
     /**
@@ -236,11 +233,12 @@ public final class RssBot extends JavaPlugin {
      */
     public void runCMD(String cmd, MessageEvent g) {
         cmd = cmd.trim();
+        boolean isBotAdmin = cfg.isBotAdmin(String.valueOf(g.getSender().getId()));
         if (cmd.startsWith("#")) {
             String[] slice = cmd.split(" ");
             int paramNum = slice.length - 1;
             if (cmd.startsWith("#sub")) {
-                if (checkSenderPerm(g)) {
+                if (checkSenderPerm(g) || isBotAdmin) {
                     if (checkUrl(slice[1])) {
                         if (paramNum == 1) {
                             if (cfg.reachLimit()) {
@@ -290,7 +288,7 @@ public final class RssBot extends JavaPlugin {
                     sendMessage(g, "没有操作权限");
                 }
             } else if (cmd.startsWith("#unsub")) {
-                if (checkSenderPerm(g)) {
+                if (checkSenderPerm(g) || isBotAdmin) {
                     if (paramNum == 1 && strToLong(slice[1]) != -1) {
                         RssItem c = cfg.getRssItem(Long.parseLong(slice[1]));
                         if (c != null) {
@@ -312,7 +310,7 @@ public final class RssBot extends JavaPlugin {
                     sendMessage(g, "没有操作权限");
                 }
             } else if (cmd.startsWith("#setinterval")) {
-                if (checkSenderPerm(g)) {
+                if (checkSenderPerm(g) || isBotAdmin) {
                     if (paramNum == 2 && strToLong(slice[1]) != -1 && strToLong(slice[2]) != -1) {
                         RssItem c = cfg.getRssItem(Long.parseLong(slice[1]));
                         if (c != null) {
@@ -331,9 +329,14 @@ public final class RssBot extends JavaPlugin {
                     sendMessage(g, "没有操作权限");
                 }
             } else if (cmd.equals("#list")) {
-                if (checkSenderPerm(g)) {
+                if (checkSenderPerm(g) || isBotAdmin) {
                     if (paramNum == 0) {
-                        List<RssItem> cs = cfg.getOnesConfigItems(String.valueOf(g.getSubject().getId()));
+                        List<RssItem> cs;
+                        if (isBotAdmin) {
+                            cs = cfg.getRssItems();
+                        } else {
+                            cs = cfg.getOnesConfigItems(String.valueOf(g.getSubject().getId()));
+                        }
                         if (cs.size() != 0) {
                             StringBuilder stringBuilder = new StringBuilder();
                             stringBuilder.append("当前有").append(cs.size()).append("条订阅:\n");
@@ -370,6 +373,12 @@ public final class RssBot extends JavaPlugin {
                     } else {
                         sendMessage(g, "参数错误");
                     }
+                } else {
+                    sendMessage(g, "没有操作权限");
+                }
+            } else if (cmd.startsWith("#status")) {
+                if (isBotAdmin) {
+                    sendMessage(g, cfg.getLog());
                 } else {
                     sendMessage(g, "没有操作权限");
                 }
