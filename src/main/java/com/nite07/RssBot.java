@@ -62,34 +62,34 @@ public final class RssBot extends JavaPlugin {
         (logger = getLogger()).info("RssBot 插件已加载，初次启动后请修改配置(config\\RssBot\\config.json)");
         cfg = new Config();
         // 监听消息
-        GlobalEventChannel.INSTANCE.subscribeAlways(MessageEvent.class, g -> new Thread(() -> runCMD(g.getMessage().contentToString(), g)).start());
-        GlobalEventChannel.INSTANCE.subscribeOnce(BotOnlineEvent.class, g -> new Thread(() -> {
+        GlobalEventChannel.INSTANCE.subscribeAlways(MessageEvent.class, g -> runCMD(g.getMessage().contentToString(), g));
+        GlobalEventChannel.INSTANCE.subscribeOnce(BotOnlineEvent.class, g -> {
             myBot = getBotInstance();
             if (myBot != null) {
                 getLogger().info("RssBot使用账号已登录，若在使用中出现问题请给我留言（https://www.nite07.com/rssbot）");
                 loadTasks();
             }
-        }).start());
+        });
 
         //监听好友请求
-        GlobalEventChannel.INSTANCE.subscribeAlways(NewFriendRequestEvent.class, g -> new Thread(() -> {
+        GlobalEventChannel.INSTANCE.subscribeAlways(NewFriendRequestEvent.class, g -> {
             if (cfg.getAutoAcceptFriendApplication()) {
                 g.accept();
             }
-        }).start());
+        });
 
         //监听群邀请
-        GlobalEventChannel.INSTANCE.subscribeAlways(BotInvitedJoinGroupRequestEvent.class, g -> new Thread(() -> {
+        GlobalEventChannel.INSTANCE.subscribeAlways(BotInvitedJoinGroupRequestEvent.class, g -> {
             if (cfg.getAutoAcceptGroupApplication()) {
                 g.accept();
             }
-        }).start());
+        });
 
         //监听退群事件
-        GlobalEventChannel.INSTANCE.subscribeAlways(BotLeaveEvent.class, g -> new Thread(() -> cfg.clearConfigItem(String.valueOf(g.getGroup().getId()), "Group")).start());
+        GlobalEventChannel.INSTANCE.subscribeAlways(BotLeaveEvent.class, g -> cfg.clearConfigItem(String.valueOf(g.getGroup().getId()), "Group"));
 
         //监听好友删除事件
-        GlobalEventChannel.INSTANCE.subscribeAlways(FriendDeleteEvent.class, g -> new Thread(() -> cfg.clearConfigItem(String.valueOf(g.getFriend().getId()), "Friend")).start());
+        GlobalEventChannel.INSTANCE.subscribeAlways(FriendDeleteEvent.class, g -> cfg.clearConfigItem(String.valueOf(g.getFriend().getId()), "Friend"));
     }
 
     /**
@@ -222,7 +222,7 @@ public final class RssBot extends JavaPlugin {
         List<RssItem> cis = cfg.getRssItems();
         if (cis != null) {
             for (RssItem c : cis) {
-                tasks.put(c.id, executor.scheduleWithFixedDelay(new Scheduler(c), 0, c.interval, TimeUnit.MINUTES));
+                tasks.put(c.id, executor.scheduleAtFixedRate(new Scheduler(c), 0, c.interval, TimeUnit.MINUTES));
             }
         }
     }
@@ -257,7 +257,7 @@ public final class RssBot extends JavaPlugin {
                                 }
                                 RssItem c = new RssItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], 10, p.getFirst(), p.getSecond());
                                 cfg.addRssItem(c);
-                                tasks.put(id, executor.scheduleWithFixedDelay(new Scheduler(c), 0, 10, TimeUnit.MINUTES));
+                                tasks.put(id, executor.scheduleAtFixedRate(new Scheduler(c), 0, 10, TimeUnit.MINUTES));
                                 sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：10分钟");
                             } else {
                                 sendMessage(g, "总订阅量已达上限，你可以自己搭建一个RssBot\nhttps://www.nite07.com/rssbot");
@@ -275,7 +275,7 @@ public final class RssBot extends JavaPlugin {
                                     }
                                     RssItem c = new RssItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], Integer.parseInt(slice[2]), p.getFirst(), p.getSecond());
                                     cfg.addRssItem(c);
-                                    tasks.put(id, executor.scheduleWithFixedDelay(new Scheduler(c), 0, Integer.parseInt(slice[2]), TimeUnit.MINUTES));
+                                    tasks.put(id, executor.scheduleAtFixedRate(new Scheduler(c), 0, Integer.parseInt(slice[2]), TimeUnit.MINUTES));
                                     sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + slice[2] + "分钟");
                                 } else {
                                     sendMessage(g, "总订阅量已达上限，你可以自己搭建一个RssBot\nhttps://www.nite07.com/rssbot");
@@ -320,7 +320,7 @@ public final class RssBot extends JavaPlugin {
                         RssItem c = cfg.getRssItem(Long.parseLong(slice[1]));
                         if (c != null) {
                             tasks.get(strToLong(slice[1])).cancel(true);
-                            tasks.put(strToLong(slice[1]), executor.scheduleWithFixedDelay(new Scheduler(c), 0, strToLong(slice[2]), TimeUnit.MINUTES));
+                            tasks.put(strToLong(slice[1]), executor.scheduleAtFixedRate(new Scheduler(c), 0, strToLong(slice[2]), TimeUnit.MINUTES));
                             c.interval = Integer.parseInt(slice[2]);
                             cfg.saveData();
                             sendMessage(g, "抓取频率已修改\n" + "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + c.interval + "分钟");

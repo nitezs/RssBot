@@ -110,17 +110,17 @@ public class Rss {
      * @return html
      */
     public static String get(String url) {
-        StringBuilder stringBuilder = new StringBuilder();
-        String credential = RssBot.cfg.getProxyCredential();
-        OkHttpClient okHttpClient = new OkHttpClient().newBuilder().connectTimeout(5, TimeUnit.SECONDS).proxy(RssBot.cfg.getProxy()).build();
-        Request request;
-        if (credential != null) {
-            request = new Request.Builder().url(url).addHeader("Proxy-Authorization", credential).build();
-        } else {
-            request = new Request.Builder().url(url).build();
-        }
-        Response response;
         try {
+            StringBuilder stringBuilder = new StringBuilder();
+            String credential = RssBot.cfg.getProxyCredential();
+            OkHttpClient okHttpClient = new OkHttpClient().newBuilder().connectTimeout(5, TimeUnit.SECONDS).proxy(RssBot.cfg.getProxy()).build();
+            Request request;
+            if (credential != null) {
+                request = new Request.Builder().url(url).addHeader("Proxy-Authorization", credential).build();
+            } else {
+                request = new Request.Builder().url(url).build();
+            }
+            Response response;
             response = okHttpClient.newCall(request).execute();
             BufferedReader bufferedReader = new BufferedReader(Objects.requireNonNull(response.body()).charStream());
             String line;
@@ -146,7 +146,9 @@ public class Rss {
         Elements es = doc.select("meta[property]");
         if (es.size() == 0) {
             es = doc.select("meta[name=description]");
-            webDetails.description = es.get(0).attr("content");
+            if (es.size() != 0) {
+                webDetails.description = es.get(0).attr("content");
+            }
         } else {
             for (org.jsoup.nodes.Element e : es) {
                 if (e.attr("property").equals("og:description")) {
