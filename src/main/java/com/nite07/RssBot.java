@@ -33,7 +33,7 @@ public final class RssBot extends JavaPlugin {
     ScheduledExecutorService executor = Executors.newScheduledThreadPool(Integer.MAX_VALUE);
 
     private RssBot() {
-        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.7")
+        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.8")
                 .name("RssBot")
                 .info("A Rss Bot")
                 .author("Nite07")
