@@ -13,8 +13,7 @@ repositories {
     maven("https://maven.aliyun.com/repository/public")
     mavenCentral()
 }
+
 dependencies {
-    //在IDE内运行的mcl添加滑块模块，请参考https://github.com/project-mirai/mirai-login-solver-selenium把版本更新为最新
-    //runtimeOnly("net.mamoe:mirai-login-solver-selenium:1.0-dev-15")
     implementation(fileTree(mapOf("dir" to "lib", "include" to listOf("*.jar"))))
 }

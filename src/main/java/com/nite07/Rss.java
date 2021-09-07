@@ -6,6 +6,7 @@ import kotlin.Pair;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
+import okhttp3.ResponseBody;
 import org.dom4j.Document;
 import org.dom4j.DocumentException;
 import org.dom4j.DocumentHelper;
@@ -113,7 +114,13 @@ public class Rss {
         try {
             StringBuilder stringBuilder = new StringBuilder();
             String credential = RssBot.cfg.getProxyCredential();
-            OkHttpClient okHttpClient = new OkHttpClient().newBuilder().connectTimeout(5, TimeUnit.SECONDS).proxy(RssBot.cfg.getProxy()).build();
+            OkHttpClient okHttpClient = new OkHttpClient()
+                    .newBuilder()
+                    .connectTimeout(5, TimeUnit.SECONDS)
+                    .readTimeout(50, TimeUnit.SECONDS)
+                    .writeTimeout(50, TimeUnit.SECONDS)
+                    .proxy(RssBot.cfg.getProxy())
+                    .build();
             Request request;
             if (credential != null) {
                 request = new Request.Builder().url(url).addHeader("Proxy-Authorization", credential).build();
@@ -122,14 +129,17 @@ public class Rss {
             }
             Response response;
             response = okHttpClient.newCall(request).execute();
-            BufferedReader bufferedReader = new BufferedReader(Objects.requireNonNull(response.body()).charStream());
-            String line;
-            while ((line = bufferedReader.readLine()) != null) {
-                stringBuilder.append(line);
+            try (ResponseBody responseBody = response.body()) {
+                BufferedReader bufferedReader = new BufferedReader(Objects.requireNonNull(responseBody).charStream());
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(line);
+                }
+                response.close();
+                return stringBuilder.toString();
             }
-            return stringBuilder.toString();
         } catch (Exception e) {
-            RssBot.logger.warning(e.getMessage());
+            RssBot.logger.warning(url + ":" + e.getMessage());
             RssBot.logger.warning(Arrays.toString(e.getStackTrace()));
             return null;
         }

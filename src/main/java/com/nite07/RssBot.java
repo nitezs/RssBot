@@ -149,7 +149,9 @@ public final class RssBot extends JavaPlugin {
         Response response;
         try {
             response = okHttpClient.newCall(request).execute();
-            return response.isSuccessful();
+            boolean res = response.isSuccessful();
+            response.close();
+            return res;
         } catch (Exception ignore) {
             return false;
         }
