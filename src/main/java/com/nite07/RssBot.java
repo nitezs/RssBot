@@ -19,6 +19,8 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +32,8 @@ public final class RssBot extends JavaPlugin {
     public static Bot myBot = null;
     public static MiraiLogger logger;
     Map<Long, ScheduledFuture<?>> tasks = new HashMap<>();
-    ScheduledExecutorService executor = Executors.newScheduledThreadPool(Integer.MAX_VALUE);
+    ScheduledExecutorService executor = Executors.newScheduledThreadPool(10);
+    ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
 
     private RssBot() {
         super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.8")
@@ -61,6 +64,7 @@ public final class RssBot extends JavaPlugin {
     public void onEnable() {
         (logger = getLogger()).info("RssBot 插件已加载，初次启动后请修改配置(config\\RssBot\\config.json)");
         cfg = new Config();
+        threadPoolExecutor.allowCoreThreadTimeOut(true);
         // 监听消息
         GlobalEventChannel.INSTANCE.subscribeAlways(MessageEvent.class, g -> runCMD(g.getMessage().contentToString(), g));
         GlobalEventChannel.INSTANCE.subscribeOnce(BotOnlineEvent.class, g -> {
@@ -258,6 +262,7 @@ public final class RssBot extends JavaPlugin {
                                     return;
                                 }
                                 RssItem c = new RssItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], 10, p.getFirst(), p.getSecond());
+                                c.refreshTime = new Date();
                                 cfg.addRssItem(c);
                                 tasks.put(id, executor.scheduleAtFixedRate(new Scheduler(c), 0, 10, TimeUnit.MINUTES));
                                 sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：10分钟");
@@ -276,6 +281,7 @@ public final class RssBot extends JavaPlugin {
                                         return;
                                     }
                                     RssItem c = new RssItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], Integer.parseInt(slice[2]), p.getFirst(), p.getSecond());
+                                    c.refreshTime = new Date();
                                     cfg.addRssItem(c);
                                     tasks.put(id, executor.scheduleAtFixedRate(new Scheduler(c), 0, Integer.parseInt(slice[2]), TimeUnit.MINUTES));
                                     sendMessage(g, "订阅设置成功\nID：" + id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + slice[2] + "分钟");
@@ -380,7 +386,17 @@ public final class RssBot extends JavaPlugin {
                 }
             } else if (cmd.equals("#status")) {
                 if (isBotAdmin) {
-                    sendMessage(g, cfg.getLog());
+                    int activeCount = threadPoolExecutor.getActiveCount();
+                    long completeTaskCount = threadPoolExecutor.getCompletedTaskCount();
+                    int poolSize = threadPoolExecutor.getPoolSize();
+                    long taskCount = threadPoolExecutor.getTaskCount();
+                    long largestPoolSize = threadPoolExecutor.getLargestPoolSize();
+                    long maximumPoolSize = threadPoolExecutor.getMaximumPoolSize();
+                    if (cfg.debug()) {
+                        sendMessage(g, cfg.getLog() + "\nactiveCount：" + activeCount + "\ncompleteTaskCount：" + completeTaskCount + "\npoolSize：" + poolSize + "\ntaskCount：" + taskCount + "\nlargestPoolSize：" + largestPoolSize + "\nmaximumPoolSize：" + maximumPoolSize);
+                    } else {
+                        sendMessage(g, cfg.getLog());
+                    }
                 } else {
                     sendMessage(g, "没有操作权限");
                 }
@@ -391,7 +407,14 @@ public final class RssBot extends JavaPlugin {
                         StringBuilder stringBuilder = new StringBuilder();
                         stringBuilder.append("当前有").append(cs.size()).append("条订阅:\n");
                         for (RssItem c : cs) {
-                            stringBuilder.append("\nID：").append(c.id).append("\n标题：").append(c.title).append("\n链接：").append(c.url).append("\n");
+                            stringBuilder.append("\nID：")
+                                    .append(c.id).append("\n标题：")
+                                    .append(c.title)
+                                    .append("\n链接：")
+                                    .append(c.url)
+                                    .append("\n上一次抓取时间：")
+                                    .append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(c.refreshTime))
+                                    .append("\n");
                         }
                         sendMessage(g, stringBuilder.toString());
                     } else {

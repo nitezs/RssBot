@@ -11,8 +11,9 @@ import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.message.data.*;
 
 import java.net.URL;
-import java.util.Arrays;
-import java.util.List;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class Scheduler implements Runnable {
 
@@ -29,15 +30,28 @@ public class Scheduler implements Runnable {
     /**
      * 主动发送信息
      */
-    public void sendMessage(String target, String type, String imageUrl, String title, String description, String link) {
+    public void sendMessage(String target, String type, String imageUrl, String title, String description, String link, Date updated) {
         if (bot != null) {
             PlainText p1 = new PlainText("\uD83D\uDCAC " + c.title);
             PlainText p2 = new PlainText(" 更新了新的内容：\n");
             PlainText p3;
-            if (description != null) {
-                p3 = new PlainText("\t标题：" + title + "\n\t简介：" + description + "……\n点击查看更多：" + link);
+            SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            Date d = null;
+            try {
+                d = simpleDateFormat.parse("1970-1-1 00:00:00");
+            } catch (ParseException ignore) {
+            }
+            String time = simpleDateFormat.format(updated);
+            assert d != null;
+            if (d.toString().equals(updated.toString())) {
+                time = "";
             } else {
-                p3 = new PlainText("\t标题：" + title + "\n点击查看更多：" + link);
+                time = "\n\t更新：" + time;
+            }
+            if (description != null) {
+                p3 = new PlainText("\t标题：" + title + time + "\n\t简介：" + description + "……\n点击查看更多：" + link);
+            } else {
+                p3 = new PlainText("\t标题：" + title + time + "\n点击查看更多：" + link);
             }
             MessageChain msg = p1.plus(p2);
             if (type.equals("Group")) {
@@ -91,6 +105,7 @@ public class Scheduler implements Runnable {
     @Override
     public void run() {
         try {
+            c.refreshTime = new Date();
             if (cfg.debug()) {
                 RssBot.logger.info("ID：" + c.id + "开始抓取");
             }
@@ -114,7 +129,7 @@ public class Scheduler implements Runnable {
                     if (!exist) {
                         c.entries.add(ne);
                         WebDetails webDetails = Rss.getWebDetails(Rss.get(ne.link));
-                        sendMessage(c.target, c.type, webDetails.imageUrl, ne.title, webDetails.description, ne.link);
+                        sendMessage(c.target, c.type, webDetails.imageUrl, ne.title, webDetails.description, ne.link, ne.updated);
                     }
                 }
                 cfg.saveData();
@@ -125,5 +140,6 @@ public class Scheduler implements Runnable {
                 RssBot.logger.warning(Arrays.toString(e.getStackTrace()));
             }
         }
+        RssBot.logger.info("ID：" + c.id + "执行完成");
     }
 }

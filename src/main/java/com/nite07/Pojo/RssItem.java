@@ -1,5 +1,6 @@
 package com.nite07.Pojo;
 
+import java.util.Date;
 import java.util.List;
 
 public class RssItem {
@@ -10,6 +11,7 @@ public class RssItem {
     public String url;
     public String title;
     public List<Entry> entries;
+    public Date refreshTime;
 
     public RssItem(long id, String type, String target, String url, int interval, String title, List<Entry> entries) {
         this.id = id;

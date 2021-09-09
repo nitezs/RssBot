@@ -63,7 +63,11 @@ public class Rss {
             String l = (String) e.elements("link").get(0).attribute("href").getData();
             Date d = null;
             try {
-                d = simpleDateFormat.parse(String.valueOf(e.elements("updated").get(0).getData()));
+                String date = String.valueOf(e.elements("updated").get(0).getData());
+                if (date.contains("CDATA")) {
+                    date = date.replace("![CDATA[", "").replace("]]", "").trim();
+                }
+                d = simpleDateFormat.parse(date);
             } catch (Exception ignore) {
                 try {
                     d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("1970-01-01 00:00:00");
@@ -92,7 +96,11 @@ public class Rss {
             String l = (String) e.elements("link").get(0).getData();
             Date d = null;
             try {
-                d = simpleDateFormat.parse(String.valueOf(e.elements("pubDate").get(0).getData()));
+                String date = String.valueOf(e.elements("pubDate").get(0).getData());
+                if (date.contains("CDATA")) {
+                    date = date.replace("![CDATA[", "").replace("]]", "").trim();
+                }
+                d = simpleDateFormat.parse(date);
             } catch (Exception ignore) {
                 try {
                     d = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse("1970-01-01 00:00:00");
@@ -136,8 +144,8 @@ public class Rss {
                     stringBuilder.append(line);
                 }
                 response.close();
-                return stringBuilder.toString();
             }
+            return stringBuilder.toString();
         } catch (Exception e) {
             RssBot.logger.warning(url + ":" + e.getMessage());
             RssBot.logger.warning(Arrays.toString(e.getStackTrace()));
