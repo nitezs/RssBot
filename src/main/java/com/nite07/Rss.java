@@ -63,10 +63,7 @@ public class Rss {
             String l = (String) e.elements("link").get(0).attribute("href").getData();
             Date d = null;
             try {
-                String date = String.valueOf(e.elements("updated").get(0).getData());
-                if (date.contains("CDATA")) {
-                    date = date.replace("![CDATA[", "").replace("]]", "").trim();
-                }
+                String date = String.valueOf(e.elements("updated").get(0).getData()).trim();
                 d = simpleDateFormat.parse(date);
             } catch (Exception ignore) {
                 try {
@@ -90,16 +87,13 @@ public class Rss {
         String title = String.valueOf(channel.elements("title").get(0).getData());
         List<Element> elements = channel.elements("item");
         List<Entry> entries = new ArrayList<>();
-        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss z", Locale.ENGLISH);
+        SimpleDateFormat simpleDateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.ENGLISH);
         for (Element e : elements) {
             String t = (String) e.elements("title").get(0).getData();
             String l = (String) e.elements("link").get(0).getData();
             Date d = null;
             try {
-                String date = String.valueOf(e.elements("pubDate").get(0).getData());
-                if (date.contains("CDATA")) {
-                    date = date.replace("![CDATA[", "").replace("]]", "").trim();
-                }
+                String date = String.valueOf(e.elements("pubDate").get(0).getData()).trim();
                 d = simpleDateFormat.parse(date);
             } catch (Exception ignore) {
                 try {

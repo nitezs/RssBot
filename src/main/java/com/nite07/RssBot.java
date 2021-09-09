@@ -36,7 +36,7 @@ public final class RssBot extends JavaPlugin {
     ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
 
     private RssBot() {
-        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.8")
+        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.9")
                 .name("RssBot")
                 .info("A Rss Bot")
                 .author("Nite07")
