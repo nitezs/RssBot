@@ -127,7 +127,7 @@ public class Scheduler implements Runnable {
                     for (Entry oe : c.entries) {
                         if (ne.title.equals(oe.title) || ne.link.equals(oe.link)) {
                             exist = true;
-                            if (c.updateMode.equals("updated") && ne.updated != oe.updated) {
+                            if (c.updateMode.equals("updated") && ne.updated.getTime() != oe.updated.getTime()) {
                                 update = true;
                             }
                             oe.updated = ne.updated;
