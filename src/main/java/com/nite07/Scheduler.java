@@ -148,6 +148,8 @@ public class Scheduler implements Runnable {
                 RssBot.logger.warning(Arrays.toString(e.getStackTrace()));
             }
         }
-        RssBot.logger.info("ID：" + c.id + "执行完成");
+        if (cfg.debug()) {
+            RssBot.logger.info("ID：" + c.id + "执行完成");
+        }
     }
 }
