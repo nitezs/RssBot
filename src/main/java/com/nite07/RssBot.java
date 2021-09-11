@@ -346,7 +346,7 @@ public final class RssBot extends JavaPlugin {
                             StringBuilder stringBuilder = new StringBuilder();
                             stringBuilder.append("当前有").append(cs.size()).append("条订阅:\n");
                             for (RssItem c : cs) {
-                                stringBuilder.append("\nID：").append(c.id).append("\n标题：").append(c.title);
+                                stringBuilder.append("\nID：").append(c.id).append("\n标题：").append(c.title).append("\n");
                             }
                             sendMessage(g, stringBuilder.toString());
                         } else {
@@ -434,6 +434,23 @@ public final class RssBot extends JavaPlugin {
                             } else {
                                 sendMessage(g, "参数错误");
                             }
+                        } else {
+                            sendMessage(g, "参数错误");
+                        }
+                    } else {
+                        sendMessage(g, "参数错误");
+                    }
+                } else {
+                    sendMessage(g, "没有操作权限");
+                }
+            } else if (cmd.startsWith("#setmergenum")) {
+                if (checkSenderPerm(g) || isBotAdmin) {
+                    if (paramNum == 2) {
+                        if (strToLong(slice[1]) != -1 && strToLong(slice[2]) != -1) {
+                            RssItem c = cfg.getRssItem(strToLong(slice[1]));
+                            c.mergeNum = Math.toIntExact(strToLong(slice[2]));
+                            cfg.saveData();
+                            sendMessage(g, "合并数量已设置为：" + slice[2]);
                         } else {
                             sendMessage(g, "参数错误");
                         }
