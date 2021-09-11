@@ -20,10 +20,7 @@ import okhttp3.Request;
 import okhttp3.Response;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 public final class RssBot extends JavaPlugin {
@@ -38,7 +35,7 @@ public final class RssBot extends JavaPlugin {
     private RssBot() {
         super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.9")
                 .name("RssBot")
-                .info("A Rss Bot")
+                .info("An Rss Bot")
                 .author("Nite07")
                 .build());
     }
@@ -325,7 +322,7 @@ public final class RssBot extends JavaPlugin {
             } else if (cmd.startsWith("#setinterval")) {
                 if (checkSenderPerm(g) || isBotAdmin) {
                     if (paramNum == 2 && strToLong(slice[1]) != -1 && strToLong(slice[2]) != -1) {
-                        RssItem c = cfg.getRssItem(Long.parseLong(slice[1]));
+                        RssItem c = cfg.getRssItem(strToLong(slice[1]));
                         if (c != null) {
                             tasks.get(strToLong(slice[1])).cancel(true);
                             tasks.put(strToLong(slice[1]), executor.scheduleAtFixedRate(new Scheduler(c), 0, strToLong(slice[2]), TimeUnit.MINUTES));
@@ -349,7 +346,7 @@ public final class RssBot extends JavaPlugin {
                             StringBuilder stringBuilder = new StringBuilder();
                             stringBuilder.append("当前有").append(cs.size()).append("条订阅:\n");
                             for (RssItem c : cs) {
-                                stringBuilder.append("\nID：").append(c.id).append("\n标题：").append(c.title).append("\n链接：").append(c.url).append("\n");
+                                stringBuilder.append("\nID：").append(c.id).append("\n标题：").append(c.title);
                             }
                             sendMessage(g, stringBuilder.toString());
                         } else {
@@ -374,7 +371,7 @@ public final class RssBot extends JavaPlugin {
                     if (paramNum == 1) {
                         if (strToLong(slice[1]) != -1) {
                             RssItem c = cfg.getRssItem(strToLong(slice[1]));
-                            sendMessage(g, "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + c.interval + "分钟\n");
+                            sendMessage(g, "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + c.interval + "分钟" + "\n更新模式：" + c.updateMode + "\n上一次抓取时间：" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(c.refreshTime));
                         } else {
                             sendMessage(g, "参数错误");
                         }
@@ -412,6 +409,8 @@ public final class RssBot extends JavaPlugin {
                                     .append(c.title)
                                     .append("\n链接：")
                                     .append(c.url)
+                                    .append("\n更新模式：")
+                                    .append(c.updateMode)
                                     .append("\n上一次抓取时间：")
                                     .append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(c.refreshTime))
                                     .append("\n");
@@ -419,6 +418,27 @@ public final class RssBot extends JavaPlugin {
                         sendMessage(g, stringBuilder.toString());
                     } else {
                         sendMessage(g, "当前无订阅");
+                    }
+                } else {
+                    sendMessage(g, "没有操作权限");
+                }
+            } else if (cmd.startsWith("#setupdatemode")) {
+                if (checkSenderPerm(g) || isBotAdmin) {
+                    if (paramNum == 2) {
+                        if (strToLong(slice[1]) != -1) {
+                            if (slice[2].equals("updated") || slice[2].equals("date")) {
+                                RssItem c = cfg.getRssItem(strToLong(slice[1]));
+                                c.updateMode = slice[2];
+                                cfg.saveData();
+                                sendMessage(g, "更新模式已修改为：" + slice[2]);
+                            } else {
+                                sendMessage(g, "参数错误");
+                            }
+                        } else {
+                            sendMessage(g, "参数错误");
+                        }
+                    } else {
+                        sendMessage(g, "参数错误");
                     }
                 } else {
                     sendMessage(g, "没有操作权限");

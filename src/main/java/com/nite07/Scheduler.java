@@ -105,6 +105,9 @@ public class Scheduler implements Runnable {
     @Override
     public void run() {
         try {
+            if (c.updateMode == null || c.updateMode.isEmpty()) {
+                c.updateMode = "date";
+            }
             c.refreshTime = new Date();
             if (cfg.debug()) {
                 RssBot.logger.info("ID：" + c.id + "开始抓取");
@@ -120,13 +123,18 @@ public class Scheduler implements Runnable {
             if (p != null) {
                 for (Entry ne : p.getSecond()) {
                     boolean exist = false;
+                    boolean update = false;
                     for (Entry oe : c.entries) {
                         if (ne.title.equals(oe.title) || ne.link.equals(oe.link)) {
                             exist = true;
+                            if (c.updateMode.equals("updated") && ne.updated != oe.updated) {
+                                update = true;
+                            }
+                            oe.updated = ne.updated;
                             break;
                         }
                     }
-                    if (!exist) {
+                    if (!exist || update) {
                         c.entries.add(ne);
                         WebDetails webDetails = Rss.getWebDetails(Rss.get(ne.link));
                         sendMessage(c.target, c.type, webDetails.imageUrl, ne.title, webDetails.description, ne.link, ne.updated);

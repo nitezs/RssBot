@@ -12,6 +12,7 @@ public class RssItem {
     public String title;
     public List<Entry> entries;
     public Date refreshTime;
+    public String updateMode;
 
     public RssItem(long id, String type, String target, String url, int interval, String title, List<Entry> entries) {
         this.id = id;
@@ -21,5 +22,6 @@ public class RssItem {
         this.url = url;
         this.title = title;
         this.entries = entries;
+        updateMode = "date";
     }
 }
