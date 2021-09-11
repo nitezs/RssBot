@@ -374,7 +374,7 @@ public class Config {
      *
      * @return boolean
      */
-    public boolean reachLimit() {
+    public boolean notReachLimit() {
         return rssItems.size() < cfg.maxSub;
     }
 

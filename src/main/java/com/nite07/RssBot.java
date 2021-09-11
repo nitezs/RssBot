@@ -248,16 +248,16 @@ public final class RssBot extends JavaPlugin {
             if (cmd.startsWith("#sub")) {
                 if (checkSenderPerm(g) || isBotAdmin) {
                     if (checkUrl(slice[1])) {
+                        long id = cfg.getNewId();
+                        String xml = Rss.get(slice[1]);
+                        Pair<String, List<Entry>> p = Rss.parseXML(xml);
+                        if (p == null) {
+                            getLogger().warning("添加订阅发生异常，订阅链接为：" + slice[1]);
+                            sendMessage(g, "添加订阅发生异常");
+                            return;
+                        }
                         if (paramNum == 1) {
-                            if (cfg.reachLimit()) {
-                                long id = cfg.getNewId();
-                                String xml = Rss.get(slice[1]);
-                                Pair<String, List<Entry>> p = Rss.parseXML(xml);
-                                if (p == null) {
-                                    getLogger().warning("添加订阅发生异常，订阅链接为：" + slice[1]);
-                                    sendMessage(g, "添加订阅发生异常");
-                                    return;
-                                }
+                            if (cfg.notReachLimit()) {
                                 RssItem c = new RssItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], 10, p.getFirst(), p.getSecond());
                                 c.refreshTime = new Date();
                                 cfg.addRssItem(c);
@@ -268,15 +268,7 @@ public final class RssBot extends JavaPlugin {
                             }
                         } else if (paramNum == 2) {
                             if (isDigit(slice[2])) {
-                                if (cfg.reachLimit()) {
-                                    long id = cfg.getNewId();
-                                    String xml = Rss.get(slice[1]);
-                                    Pair<String, List<Entry>> p = Rss.parseXML(xml);
-                                    if (p == null) {
-                                        getLogger().warning("添加订阅发生异常，订阅链接为：" + slice[1]);
-                                        sendMessage(g, "添加订阅发生异常");
-                                        return;
-                                    }
+                                if (cfg.notReachLimit()) {
                                     RssItem c = new RssItem(id, getMessageType(g), String.valueOf(g.getSubject().getId()), slice[1], Integer.parseInt(slice[2]), p.getFirst(), p.getSecond());
                                     c.refreshTime = new Date();
                                     cfg.addRssItem(c);
@@ -324,11 +316,15 @@ public final class RssBot extends JavaPlugin {
                     if (paramNum == 2 && strToLong(slice[1]) != -1 && strToLong(slice[2]) != -1) {
                         RssItem c = cfg.getRssItem(strToLong(slice[1]));
                         if (c != null) {
-                            tasks.get(strToLong(slice[1])).cancel(true);
-                            tasks.put(strToLong(slice[1]), executor.scheduleAtFixedRate(new Scheduler(c), 0, strToLong(slice[2]), TimeUnit.MINUTES));
-                            c.interval = Integer.parseInt(slice[2]);
-                            cfg.saveData();
-                            sendMessage(g, "抓取频率已修改\n" + "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + c.interval + "分钟");
+                            if (isSubOwner(g, c)) {
+                                tasks.get(strToLong(slice[1])).cancel(true);
+                                tasks.put(strToLong(slice[1]), executor.scheduleAtFixedRate(new Scheduler(c), 0, strToLong(slice[2]), TimeUnit.MINUTES));
+                                c.interval = Integer.parseInt(slice[2]);
+                                cfg.saveData();
+                                sendMessage(g, "抓取频率已修改\n" + "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + c.interval + "分钟");
+                            } else {
+                                sendMessage(g, "未找到订阅");
+                            }
                         } else {
                             sendMessage(g, "未找到订阅");
                         }
@@ -359,19 +355,13 @@ public final class RssBot extends JavaPlugin {
                     sendMessage(g, "没有操作权限");
                 }
             } else if (cmd.equals("#help")) {
-                String t = "#sub <url> [interval(minute)]\n添加订阅\n" +
-                        "#unsub <id>\n取消订阅\n" +
-                        "#setinterval <id> <interval(minute)>\n设置抓取间隔（单位：分钟）\n" +
-                        "#list\n列出当前订阅\n" +
-                        "#detail <id>\n查询订阅详细信息\n" +
-                        "<>为必须参数，[]为可选参数";
-                sendMessage(g, t);
+                sendMessage(g, "说明文档 https://www.nite07.com/rssbot/");
             } else if (cmd.startsWith("#detail")) {
                 if (checkSenderPerm(g)) {
                     if (paramNum == 1) {
                         if (strToLong(slice[1]) != -1) {
                             RssItem c = cfg.getRssItem(strToLong(slice[1]));
-                            sendMessage(g, "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + c.interval + "分钟" + "\n更新模式：" + c.updateMode + "\n上一次抓取时间：" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(c.refreshTime));
+                            sendMessage(g, "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + c.interval + "分钟" + "\n更新模式：" + c.updateMode + "\n合并数量：" + c.mergeNum + "\n上一次抓取时间：" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(c.refreshTime));
                         } else {
                             sendMessage(g, "参数错误");
                         }
@@ -428,9 +418,17 @@ public final class RssBot extends JavaPlugin {
                         if (strToLong(slice[1]) != -1) {
                             if (slice[2].equals("updated") || slice[2].equals("date")) {
                                 RssItem c = cfg.getRssItem(strToLong(slice[1]));
-                                c.updateMode = slice[2];
-                                cfg.saveData();
-                                sendMessage(g, "更新模式已修改为：" + slice[2]);
+                                if (c != null) {
+                                    if (isSubOwner(g, c)) {
+                                        c.updateMode = slice[2];
+                                        cfg.saveData();
+                                        sendMessage(g, "更新模式已修改为：" + slice[2]);
+                                    } else {
+                                        sendMessage(g, "未找到订阅");
+                                    }
+                                } else {
+                                    sendMessage(g, "未找到订阅");
+                                }
                             } else {
                                 sendMessage(g, "参数错误");
                             }
@@ -448,9 +446,46 @@ public final class RssBot extends JavaPlugin {
                     if (paramNum == 2) {
                         if (strToLong(slice[1]) != -1 && strToLong(slice[2]) != -1) {
                             RssItem c = cfg.getRssItem(strToLong(slice[1]));
-                            c.mergeNum = Math.toIntExact(strToLong(slice[2]));
-                            cfg.saveData();
-                            sendMessage(g, "合并数量已设置为：" + slice[2]);
+                            if (c != null) {
+                                if (isSubOwner(g, c)) {
+                                    c.mergeNum = Math.toIntExact(strToLong(slice[2]));
+                                    cfg.saveData();
+                                    sendMessage(g, "合并数量已设置为：" + slice[2]);
+                                } else {
+                                    sendMessage(g, "未找到订阅");
+                                }
+                            } else {
+                                sendMessage(g, "未找到订阅");
+                            }
+                        } else {
+                            sendMessage(g, "参数错误");
+                        }
+                    } else {
+                        sendMessage(g, "参数错误");
+                    }
+                } else {
+                    sendMessage(g, "没有操作权限");
+                }
+            } else if (cmd.startsWith("#showimage")) {
+                if (checkSenderPerm(g) || isBotAdmin) {
+                    if (paramNum == 2) {
+                        if (strToLong(slice[1]) != -1) {
+                            RssItem c = cfg.getRssItem(strToLong(slice[1]));
+                            if (c != null) {
+                                if (isSubOwner(g, c)) {
+                                    if (slice[2].equals("true") || slice[2].equals("false")) {
+                                        c.showImage = slice[2].equals("true");
+                                        sendMessage(g, "显示图片已修改为：" + slice[2]);
+                                        cfg.saveData();
+                                    } else {
+                                        sendMessage(g, "参数错误");
+                                    }
+                                } else {
+                                    sendMessage(g, "未找到订阅");
+                                }
+                            } else {
+                                sendMessage(g, "未找到订阅");
+                            }
                         } else {
                             sendMessage(g, "参数错误");
                         }

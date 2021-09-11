@@ -6,7 +6,6 @@ import com.nite07.Pojo.WebDetails;
 import kotlin.Pair;
 import net.mamoe.mirai.Bot;
 import net.mamoe.mirai.contact.Contact;
-import net.mamoe.mirai.contact.Group;
 import net.mamoe.mirai.message.data.*;
 
 import java.net.URL;
@@ -27,7 +26,7 @@ public class Scheduler implements Runnable {
     }
 
     public MessageChain buildContent(Contact contact, Entry ne) {
-        MessageChain res = null;
+        MessageChainBuilder messages = new MessageChainBuilder();
         WebDetails webDetails = Rss.getWebDetails(Rss.get(ne.link));
         PlainText p;
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -48,27 +47,24 @@ public class Scheduler implements Runnable {
         } else {
             p = new PlainText("\t标题：" + ne.title + time + "\n点击查看更多：" + ne.link);
         }
-        if (RssBot.strToLong(c.target) != -1) {
-            Group group = bot.getGroup(RssBot.strToLong(c.target));
-            if (group != null) {
-                Image img = null;
-                try {
-                    if (webDetails.imageUrl != null) {
-                        img = Contact.uploadImage(contact, new URL(webDetails.imageUrl).openConnection().getInputStream());
-                    }
-                } catch (Exception e) {
-                    if (cfg.debug()) {
-                        RssBot.logger.warning(e.getMessage());
-                        RssBot.logger.warning(Arrays.toString(e.getStackTrace()));
-                    }
+        Image img = null;
+        if (c.showImage) {
+            try {
+                if (webDetails.imageUrl != null) {
+                    img = Contact.uploadImage(contact, new URL(webDetails.imageUrl).openConnection().getInputStream());
                 }
-                res = p.plus(new PlainText(""));
-                if (img != null) {
-                    res = res.plus(img);
+            } catch (Exception e) {
+                if (cfg.debug()) {
+                    RssBot.logger.warning(e.getMessage());
+                    RssBot.logger.warning(Arrays.toString(e.getStackTrace()));
                 }
             }
         }
-        return res;
+        messages.append(p);
+        if (img != null && c.showImage) {
+            messages.append(img);
+        }
+        return messages.build();
     }
 
     @Override
@@ -94,10 +90,10 @@ public class Scheduler implements Runnable {
             }
             Pair<String, List<Entry>> p = Rss.parseXML(xml);
             if (p != null) {
-                MessageChain msg;
+                MessageChainBuilder msg = new MessageChainBuilder();
                 PlainText p1 = new PlainText("\uD83D\uDCAC " + c.title);
                 PlainText p2 = new PlainText(" 更新了新的内容：\n");
-                msg = p1.plus(p2);
+                msg.append(p1).append(p2);
                 Contact contact = null;
                 if (c.type.equals("Group")) {
                     if (RssBot.strToLong(c.target) != -1) {
@@ -126,17 +122,22 @@ public class Scheduler implements Runnable {
                     }
                     if (!exist || update) {
                         counter++;
-                        c.entries.add(ne);
-                        msg.plus(buildContent(contact, ne));
+                        if (!exist) {
+                            c.entries.add(ne);
+                        }
+                        msg.append(buildContent(contact, ne));
+                        if (counter > 1 && counter != c.mergeNum) {
+                            msg.append("\n");
+                        }
                         if (counter == c.mergeNum) {
-                            contact.sendMessage(msg);
+                            contact.sendMessage(msg.build());
                             counter = 0;
-                            msg = p1.plus(p2);
+                            msg = new MessageChainBuilder().append(p1).append(p2);
                         }
                     }
                 }
                 if (counter != 0 && counter < c.mergeNum) {
-                    contact.sendMessage(msg);
+                    contact.sendMessage(msg.build());
                 }
                 cfg.saveData();
             }
@@ -145,9 +146,6 @@ public class Scheduler implements Runnable {
                 RssBot.logger.warning(e.getMessage());
                 RssBot.logger.warning(Arrays.toString(e.getStackTrace()));
             }
-        }
-        if (cfg.debug()) {
-            RssBot.logger.info("ID：" + c.id + "执行完成");
         }
     }
 }

@@ -14,6 +14,10 @@ public class RssItem {
     public Date refreshTime;
     public String updateMode;
     public int mergeNum;
+    public boolean showImage;
+
+    public RssItem() {
+    }
 
     public RssItem(long id, String type, String target, String url, int interval, String title, List<Entry> entries) {
         this.id = id;
@@ -23,7 +27,8 @@ public class RssItem {
         this.url = url;
         this.title = title;
         this.entries = entries;
-        updateMode = "date";
-        mergeNum = 1;
+        this.mergeNum = 1;
+        this.updateMode = "date";
+        this.showImage = true;
     }
 }
