@@ -40,12 +40,12 @@ public class Scheduler implements Runnable {
         if (d.toString().equals(ne.updated.toString())) {
             time = "";
         } else {
-            time = "\n\t更新：" + time;
+            time = "\n\t\uD83D\uDD5B更新：" + time;
         }
         if (webDetails.description != null) {
-            p = new PlainText("\t标题：" + ne.title + time + "\n\t简介：" + webDetails.description + "……\n点击查看更多：" + ne.link+ "\n");
+            p = new PlainText("\t\uD83C\uDF86标题：" + ne.title + time + "\n\t\uD83C\uDF87简介：" + webDetails.description + "……\n\uD83D\uDCE2点击查看更多：" + ne.link+ "\n");
         } else {
-            p = new PlainText("\t标题：" + ne.title + time + "\n点击查看更多：" + ne.link + "\n");
+            p = new PlainText("\t\uD83C\uDF86标题：" + ne.title + time + "\n\uD83D\uDCE2点击查看更多：" + ne.link + "\n");
         }
         Image img = null;
         if (c.showImage) {
