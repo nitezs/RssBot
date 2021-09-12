@@ -43,9 +43,9 @@ public class Scheduler implements Runnable {
             time = "\n\t更新：" + time;
         }
         if (webDetails.description != null) {
-            p = new PlainText("\t标题：" + ne.title + time + "\n\t简介：" + webDetails.description + "……\n点击查看更多：" + ne.link);
+            p = new PlainText("\t标题：" + ne.title + time + "\n\t简介：" + webDetails.description + "……\n点击查看更多：" + ne.link+ "\n");
         } else {
-            p = new PlainText("\t标题：" + ne.title + time + "\n点击查看更多：" + ne.link);
+            p = new PlainText("\t标题：" + ne.title + time + "\n点击查看更多：" + ne.link + "\n");
         }
         Image img = null;
         if (c.showImage) {

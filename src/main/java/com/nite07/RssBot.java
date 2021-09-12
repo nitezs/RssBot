@@ -294,7 +294,7 @@ public final class RssBot extends JavaPlugin {
                     if (paramNum == 1 && strToLong(slice[1]) != -1) {
                         RssItem c = cfg.getRssItem(Long.parseLong(slice[1]));
                         if (c != null) {
-                            if (isSubOwner(g, c)) {
+                            if (isSubOwner(g, c) || isBotAdmin) {
                                 tasks.get(strToLong(slice[1])).cancel(true);
                                 tasks.remove(strToLong(slice[1]));
                                 cfg.removeConfigItem(c);
@@ -316,7 +316,7 @@ public final class RssBot extends JavaPlugin {
                     if (paramNum == 2 && strToLong(slice[1]) != -1 && strToLong(slice[2]) != -1) {
                         RssItem c = cfg.getRssItem(strToLong(slice[1]));
                         if (c != null) {
-                            if (isSubOwner(g, c)) {
+                            if (isSubOwner(g, c) || isBotAdmin) {
                                 tasks.get(strToLong(slice[1])).cancel(true);
                                 tasks.put(strToLong(slice[1]), executor.scheduleAtFixedRate(new Scheduler(c), 0, strToLong(slice[2]), TimeUnit.MINUTES));
                                 c.interval = Integer.parseInt(slice[2]);
@@ -419,7 +419,7 @@ public final class RssBot extends JavaPlugin {
                             if (slice[2].equals("updated") || slice[2].equals("date")) {
                                 RssItem c = cfg.getRssItem(strToLong(slice[1]));
                                 if (c != null) {
-                                    if (isSubOwner(g, c)) {
+                                    if (isSubOwner(g, c) || isBotAdmin) {
                                         c.updateMode = slice[2];
                                         cfg.saveData();
                                         sendMessage(g, "更新模式已修改为：" + slice[2]);
@@ -447,7 +447,7 @@ public final class RssBot extends JavaPlugin {
                         if (strToLong(slice[1]) != -1 && strToLong(slice[2]) != -1) {
                             RssItem c = cfg.getRssItem(strToLong(slice[1]));
                             if (c != null) {
-                                if (isSubOwner(g, c)) {
+                                if (isSubOwner(g, c) || isBotAdmin) {
                                     c.mergeNum = Math.toIntExact(strToLong(slice[2]));
                                     cfg.saveData();
                                     sendMessage(g, "合并数量已设置为：" + slice[2]);
@@ -472,7 +472,7 @@ public final class RssBot extends JavaPlugin {
                         if (strToLong(slice[1]) != -1) {
                             RssItem c = cfg.getRssItem(strToLong(slice[1]));
                             if (c != null) {
-                                if (isSubOwner(g, c)) {
+                                if (isSubOwner(g, c) || isBotAdmin) {
                                     if (slice[2].equals("true") || slice[2].equals("false")) {
                                         c.showImage = slice[2].equals("true");
                                         sendMessage(g, "显示图片已修改为：" + slice[2]);
