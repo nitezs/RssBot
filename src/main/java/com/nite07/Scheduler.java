@@ -43,9 +43,9 @@ public class Scheduler implements Runnable {
             time = "\n\t\uD83D\uDD5B更新：" + time;
         }
         if (webDetails.description != null) {
-            p = new PlainText("\t\uD83C\uDF86标题：" + ne.title + time + "\n\t\uD83C\uDF87简介：" + webDetails.description + "……\n\uD83D\uDCE2点击查看更多：" + ne.link+ "\n");
+            p = new PlainText("\t\u270F\uFE0F标题：" + ne.title + time + "\n\t\uD83C\uDFF7简介：" + webDetails.description + "……\n\t\uD83D\uDD0D点击查看更多：" + ne.link + "\n");
         } else {
-            p = new PlainText("\t\uD83C\uDF86标题：" + ne.title + time + "\n\uD83D\uDCE2点击查看更多：" + ne.link + "\n");
+            p = new PlainText("\t\u270F\uFE0F标题：" + ne.title + time + "\n\t\uD83D\uDD0D点击查看更多：" + ne.link + "\n");
         }
         Image img = null;
         if (c.showImage) {
@@ -62,7 +62,7 @@ public class Scheduler implements Runnable {
         }
         messages.append(p);
         if (img != null && c.showImage) {
-            messages.append(img);
+            messages.append(img).append("\n");
         }
         return messages.build();
     }
@@ -91,9 +91,8 @@ public class Scheduler implements Runnable {
             Pair<String, List<Entry>> p = Rss.parseXML(xml);
             if (p != null) {
                 MessageChainBuilder msg = new MessageChainBuilder();
-                PlainText p1 = new PlainText("\uD83D\uDCAC " + c.title);
-                PlainText p2 = new PlainText(" 更新了新的内容：\n");
-                msg.append(p1).append(p2);
+                PlainText title = new PlainText("\uD83D\uDCAC " + c.title + " 更新了新的内容：\n");
+                msg.append(title);
                 Contact contact = null;
                 if (c.type.equals("Group")) {
                     if (RssBot.strToLong(c.target) != -1) {
@@ -125,18 +124,17 @@ public class Scheduler implements Runnable {
                         if (!exist) {
                             c.entries.add(ne);
                         }
-                        msg.append(buildContent(contact, ne));
-                        if (counter > 1 && counter != c.mergeNum) {
-                            msg.append("\n");
-                        }
+                        msg.append(buildContent(contact, ne)).append(new PlainText("\n"));
                         if (counter == c.mergeNum) {
+                            msg.remove(msg.size() - 1);
                             contact.sendMessage(msg.build());
                             counter = 0;
-                            msg = new MessageChainBuilder().append(p1).append(p2);
+                            msg = new MessageChainBuilder().append(title);
                         }
                     }
                 }
                 if (counter != 0 && counter < c.mergeNum) {
+                    msg.remove(msg.size() - 1);
                     contact.sendMessage(msg.build());
                 }
                 cfg.saveData();

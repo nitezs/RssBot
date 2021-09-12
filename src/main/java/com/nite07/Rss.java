@@ -142,7 +142,6 @@ public class Rss {
             return stringBuilder.toString();
         } catch (Exception e) {
             RssBot.logger.warning(url + ":" + e.getMessage());
-            RssBot.logger.warning(Arrays.toString(e.getStackTrace()));
             return null;
         }
     }
