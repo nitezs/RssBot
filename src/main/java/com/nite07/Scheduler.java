@@ -106,6 +106,7 @@ public class Scheduler implements Runnable {
                 if (contact == null) {
                     return;
                 }
+                ForwardMessageBuilder forwardMessageBuilder = new ForwardMessageBuilder(contact);
                 for (Entry ne : p.getSecond()) {
                     boolean exist = false;
                     boolean update = false;
@@ -127,7 +128,12 @@ public class Scheduler implements Runnable {
                         msg.append(buildContent(contact, ne)).append(new PlainText("\n"));
                         if (counter == c.mergeNum) {
                             msg.remove(msg.size() - 1);
-                            contact.sendMessage(msg.build());
+                            MessageChain m = msg.build();
+                            if (c.forwardMessage) {
+                                forwardMessageBuilder.says(RssBot.myBot, m);
+                            } else {
+                                contact.sendMessage(m);
+                            }
                             counter = 0;
                             msg = new MessageChainBuilder().append(title);
                         }
@@ -135,7 +141,15 @@ public class Scheduler implements Runnable {
                 }
                 if (counter != 0 && counter < c.mergeNum) {
                     msg.remove(msg.size() - 1);
-                    contact.sendMessage(msg.build());
+                    MessageChain m = msg.build();
+                    if (c.forwardMessage) {
+                        forwardMessageBuilder.says(RssBot.myBot, m);
+                    } else {
+                        contact.sendMessage(m);
+                    }
+                }
+                if (c.forwardMessage && !forwardMessageBuilder.isEmpty()) {
+                    contact.sendMessage(forwardMessageBuilder.build());
                 }
                 cfg.saveData();
             }

@@ -15,6 +15,7 @@ public class RssItem {
     public String updateMode;
     public int mergeNum;
     public boolean showImage;
+    public boolean forwardMessage;
 
     public RssItem() {
     }
@@ -30,5 +31,6 @@ public class RssItem {
         this.mergeNum = 1;
         this.updateMode = "date";
         this.showImage = true;
+        this.forwardMessage = false;
     }
 }

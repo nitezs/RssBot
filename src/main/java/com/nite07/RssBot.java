@@ -33,7 +33,7 @@ public final class RssBot extends JavaPlugin {
     ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
 
     private RssBot() {
-        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "1.9")
+        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "2.0")
                 .name("RssBot")
                 .info("An Rss Bot")
                 .author("Nite07")
@@ -361,7 +361,7 @@ public final class RssBot extends JavaPlugin {
                     if (paramNum == 1) {
                         if (strToLong(slice[1]) != -1) {
                             RssItem c = cfg.getRssItem(strToLong(slice[1]));
-                            sendMessage(g, "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + c.interval + "分钟" + "\n更新模式：" + c.updateMode + "\n合并数量：" + c.mergeNum + "\n上一次抓取时间：" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(c.refreshTime));
+                            sendMessage(g, "ID：" + c.id + "\n标题：" + c.title + "\n链接：" + c.url + "\n抓取频率：" + c.interval + "分钟" + "\n更新模式：" + c.updateMode + "\n合并数量：" + c.mergeNum + "\n合并消息模式：" + c.forwardMessage + "\n上一次抓取时间：" + new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(c.refreshTime));
                         } else {
                             sendMessage(g, "参数错误");
                         }
@@ -480,6 +480,35 @@ public final class RssBot extends JavaPlugin {
                                     } else {
                                         sendMessage(g, "参数错误");
                                     }
+                                } else {
+                                    sendMessage(g, "未找到订阅");
+                                }
+                            } else {
+                                sendMessage(g, "未找到订阅");
+                            }
+                        } else {
+                            sendMessage(g, "参数错误");
+                        }
+                    } else {
+                        sendMessage(g, "参数错误");
+                    }
+                } else {
+                    sendMessage(g, "没有操作权限");
+                }
+            } else if (cmd.startsWith("#forwardmessage")) {
+                if (checkSenderPerm(g) || isBotAdmin) {
+                    if (paramNum == 2) {
+                        if (strToLong(slice[1]) != -1 && (slice[2].equals("true") || slice[2].equals("false"))) {
+                            RssItem c = cfg.getRssItem(strToLong(slice[1]));
+                            if (c != null) {
+                                if (isSubOwner(g, c) || isBotAdmin) {
+                                    c.forwardMessage = slice[2].equals("true");
+                                    if (c.forwardMessage) {
+                                        sendMessage(g, "已开启合并消息模式");
+                                    } else {
+                                        sendMessage(g, "已关闭合并消息模式");
+                                    }
+                                    cfg.saveData();
                                 } else {
                                     sendMessage(g, "未找到订阅");
                                 }
