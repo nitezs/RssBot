@@ -14,10 +14,10 @@ import net.mamoe.mirai.utils.MiraiLogger;
 import okhttp3.Credentials;
 
 public class Config {
-    String configDir = "config/RssBot/";
+    String configDir = "config/com.nite07.RssBot/";
     String configName = "config.json";
     String configPath = configDir + configName;
-    String datafileDir = "data/RssBot/";
+    String datafileDir = "data/com.nite07.RssBot/";
     String dataName = "data.json";
     String dataPath = datafileDir + dataName;
     ReentrantLock lock = new ReentrantLock();

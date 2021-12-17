@@ -33,7 +33,7 @@ public final class RssBot extends JavaPlugin {
     ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) executor;
 
     private RssBot() {
-        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "2.0")
+        super(new JvmPluginDescriptionBuilder("com.nite07.RssBot", "2.1")
                 .name("RssBot")
                 .info("An Rss Bot")
                 .author("Nite07")
@@ -59,7 +59,7 @@ public final class RssBot extends JavaPlugin {
      */
     @Override
     public void onEnable() {
-        (logger = getLogger()).info("RssBot 插件已加载，初次启动后请修改配置(config\\RssBot\\config.json)");
+        (logger = getLogger()).info("RssBot 插件已加载，初次启动后请修改配置(config\\com.nite07.RssBot\\config.json)");
         cfg = new Config();
         threadPoolExecutor.allowCoreThreadTimeOut(true);
         // 监听消息
